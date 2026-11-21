@@ -28,7 +28,7 @@
         <module>dtos</module>
         <module>microservices/order-processor</module>
         <!-- <module>microservices/order-api</module> -->
-        <!-- <module>microservices/driver-simulator</module> -->
+        <module>microservices/driver-simulator</module>
         <!-- <module>microservices/notification-router</module> -->
         <!-- <module>microservices/sms-worker</module> -->
         <!-- <module>microservices/push-worker</module> -->
