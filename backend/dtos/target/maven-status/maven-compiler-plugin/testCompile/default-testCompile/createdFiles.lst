@@ -1,0 +1,3 @@
+dtos\NotificationCommandTest.class
+dtos\OrderCreatedCommandTest.class
+dtos\OrderEventTest.class
