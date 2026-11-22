@@ -1,4 +1,0 @@
-pushworker\service\PushSenderService.class
-pushworker\PushWorkerApplication.class
-pushworker\config\RabbitConfig.class
-pushworker\rabbit\PushListener.class

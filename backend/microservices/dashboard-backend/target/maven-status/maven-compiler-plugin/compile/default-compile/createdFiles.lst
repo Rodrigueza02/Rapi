@@ -1,4 +1,0 @@
-backend\config\WebSocketConfig.class
-backend\DashboardBackendApplication.class
-backend\controller\DashboardController.class
-backend\websocket\DashboardWebSocketHandler.class
