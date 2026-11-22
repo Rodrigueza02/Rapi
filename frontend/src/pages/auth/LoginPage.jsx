@@ -1,13 +1,6 @@
 import LoginForm from '../../components/auth/LoginForm';
 import foodImg   from '/images/login-food.png';
 
-/**
- * Pantalla de inicio de sesión — diseño DeliveryFlow pixel-perfect.
- *
- * Estructura:
- *   fondo crema + blobs naranjas → card blanca centrada
- *     logo (ícono moto + nombre) → imagen de comida → título → formulario
- */
 export default function LoginPage({ onSuccess }) {
   return (
     <main className="login-screen">
