@@ -1,0 +1,32 @@
+
+spring:
+  application:
+    name: dashboard-aggregator
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: dashboard-aggregator
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/rappistream}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+server:
+  port: 8085
+
+logging:
+  level:
+    aggregator: INFO
+    org.springframework.kafka: INFO
+
+dashboard:
+  backend:
+    websocket-url: ${DASHBOARD_BACKEND_WS_URL:ws://localhost:8086/ws/ingest}
+

@@ -1,0 +1,4 @@
+aggregator\service\DashboardAggregatorServiceTest.class
+aggregator\websocket\WebSocketBroadcasterTest.class
+aggregator\database\OrderHistoryRepositoryAdapterTest.class
+aggregator\model\OrderViewTest.class
