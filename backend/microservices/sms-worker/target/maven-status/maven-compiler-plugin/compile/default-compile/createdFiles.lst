@@ -1,4 +1,0 @@
-smsworker\config\RabbitConfig.class
-smsworker\service\SmsSenderService.class
-smsworker\SmsWorkerApplication.class
-smsworker\rabbit\SmsListener.class
