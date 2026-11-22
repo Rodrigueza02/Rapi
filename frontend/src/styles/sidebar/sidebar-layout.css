@@ -1,0 +1,10 @@
+.admin-sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 255px;
+  min-height: 100vh;
+  flex-shrink: 0;
+  padding: 28px 14px 0;
+  background: #fff;
+  border-right: 1px solid #f1e8e1;
+}

@@ -1,48 +1,106 @@
-import { ShoppingBag, Bike, CheckCircle2, Clock3, Activity, Route } from 'lucide-react';
-import StatCard from '../../components/admin/StatCard';
+import { useCallback, useState } from 'react';
+import { Package } from 'lucide-react';
 
-const STATS = [
-  ['Pedidos totales', '—', ShoppingBag],
-  ['En camino',       '—', Bike],
-  ['Entregados',      '—', CheckCircle2],
-  ['Pendientes',      '—', Clock3],
-];
+import DashboardStats      from '../../components/dashboard/DashboardStats.jsx';
+import OrdersToolbar       from '../../components/orders/OrdersToolbar.jsx';
+import OrdersTable         from '../../components/orders/OrdersTable.jsx';
+import RoundRobinWheel     from '../../components/dashboard/RoundRobinWheel.jsx';
+import RoundRobinNextCard  from '../../components/dashboard/RoundRobinNextCard.jsx';
+import RequestsPanel       from '../../components/dashboard/RequestsPanel.jsx';
+import PaymentsPanel       from '../../components/dashboard/PaymentsPanel.jsx';
+import EmailsPanel         from '../../components/dashboard/EmailsPanel.jsx';
 
+import useOrders      from '../../hooks/useOrders.js';
+import useRoundRobin  from '../../hooks/useRoundRobin.js';
+import useWebSocket   from '../../hooks/useWebSocket.js';
+
+/**
+ * Página principal del panel administrativo.
+ *
+ * Responsabilidades:
+ *  - Orquestar los hooks de datos
+ *  - Escuchar eventos WebSocket y refrescar la tabla/stats
+ *  - Pasar datos hacia abajo a cada componente
+ *
+ * Principio SRP: cada componente hijo sabe solo renderizar su sección.
+ */
 export default function AdminDashboard() {
+  const [search, setSearch] = useState('');
+
+  // ── Datos del backend ──────────────────────────────────────────────────────
+  const { orders, loading: ordersLoading, error: ordersError, reload: reloadOrders } = useOrders();
+  const { roundRobin, loading: rrLoading, reload: reloadRR } = useRoundRobin();
+
+  // ── WebSocket — refresca tabla y rueda cuando llega un evento ─────────────
+  const onWsEvent = useCallback(() => {
+    reloadOrders();
+    reloadRR();
+  }, [reloadOrders, reloadRR]);
+
+  useWebSocket(onWsEvent);
+
+  // ── Filtrado local por búsqueda ────────────────────────────────────────────
+  const filtered = orders.filter(o =>
+    !search ||
+    o.order_id.toLowerCase().includes(search.toLowerCase()) ||
+    o.driver_id?.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <>
-      <div className="section-heading">
-        <div>
-          <h2>Resumen operativo</h2>
-          <p>Información disponible cuando conectemos los endpoints de métricas.</p>
+    <div className="admin-dashboard">
+
+      {/* ── Tarjetas de métricas ─────────────────────────────────────────── */}
+      <DashboardStats />
+
+      {/* ── Tabla de pedidos recientes ───────────────────────────────────── */}
+      <section className="dashboard-section">
+        <div className="section-heading">
+          <div className="section-title">
+            <Package size={20} />
+            <h2>Pedidos recientes</h2>
+          </div>
+          <OrdersToolbar
+            search={search}
+            onSearch={setSearch}
+            onNewOrder={() => {/* Segunda entrega */}}
+          />
         </div>
-        <span className="status-pill">Integración pendiente</span>
+
+        <OrdersTable
+          orders={filtered}
+          loading={ordersLoading}
+          error={ordersError}
+        />
+      </section>
+
+      {/* ── Round Robin + Solicitudes ────────────────────────────────────── */}
+      <div className="dashboard-row">
+        <section className="dashboard-section dashboard-section--rr">
+          <div className="section-heading">
+            <div className="section-title">
+              <span className="rr-icon-title">🔄</span>
+              <div>
+                <h2>Asignación de repartidores (Round Robin)</h2>
+                <p>Rotación automática y equitativa de pedidos</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rr-layout">
+            <RoundRobinWheel  roundRobin={roundRobin} />
+            <RoundRobinNextCard roundRobin={roundRobin} loading={rrLoading} />
+          </div>
+        </section>
+
+        <RequestsPanel requests={[]} />
       </div>
 
-      <section className="stats-grid">
-        {STATS.map(([label, value, icon]) => (
-          <StatCard
-            key={label}
-            label={label}
-            value={value}
-            icon={icon}
-            note="Sin datos conectados"
-          />
-        ))}
-      </section>
+      {/* ── Pagos + Correos ──────────────────────────────────────────────── */}
+      <div className="dashboard-row">
+        <PaymentsPanel stats={null} />
+        <EmailsPanel   stats={null} />
+      </div>
 
-      <section className="panel-grid">
-        <article className="panel">
-          <h3><Activity size={20} /> Actividad de pedidos</h3>
-          <p>Las estadísticas se cargarán desde el backend de dashboard.</p>
-          <div className="panel-placeholder">Sin datos operativos disponibles</div>
-        </article>
-        <article className="panel">
-          <h3><Route size={20} /> Asignación Round Robin</h3>
-          <p>Se visualizará la asignación real de repartidores.</p>
-          <div className="panel-placeholder">Esperando endpoint de asignaciones</div>
-        </article>
-      </section>
-    </>
+    </div>
   );
 }
