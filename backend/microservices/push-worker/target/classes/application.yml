@@ -1,0 +1,27 @@
+
+spring:
+  application:
+    name: push-worker
+
+  main:
+    web-application-type: none
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    connection-timeout: 5s
+    listener:
+      simple:
+        prefetch: 1
+        default-requeue-rejected: false
+
+management:
+  endpoints:
+    enabled-by-default: false
+
+logging:
+  level:
+    root: INFO
+    pushworker: DEBUG

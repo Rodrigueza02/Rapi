@@ -1,0 +1,6 @@
+orderapi\ports\OrderCommandPublisherPort.class
+orderapi\rabbit\RabbitOrderCommandPublisher.class
+orderapi\controller\OrderController.class
+orderapi\config\RabbitConfig.class
+orderapi\OrderApiApplication.class
+orderapi\service\CreateOrderService.class

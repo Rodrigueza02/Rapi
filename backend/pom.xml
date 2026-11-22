@@ -26,13 +26,13 @@
     <!-- Activa cada modulo quitando el comentario cuando su pom.xml ya este escrito -->
     <modules>
         <module>dtos</module>
-        <!-- <module>microservices/order-api</module> -->
-        <!-- <module>microservices/order-processor</module> -->
-        <!-- <module>microservices/driver-simulator</module> -->
-        <!-- <module>microservices/notification-router</module> -->
-        <!-- <module>microservices/sms-worker</module> -->
-        <!-- <module>microservices/push-worker</module> -->
-        <!-- <module>microservices/dashboard-aggregator</module> -->
-        <!-- <module>microservices/dashboard-backend</module> -->
+        <module>microservices/order-api</module> 
+        <module>microservices/order-processor</module> 
+        <module>microservices/driver-simulator</module> 
+        <module>microservices/notification-router</module> 
+        <module>microservices/sms-worker</module> 
+        <module>microservices/push-worker</module> 
+        <module>microservices/dashboard-aggregator</module> 
+        <module>microservices/dashboard-backend</module>
     </modules>
 </project>
