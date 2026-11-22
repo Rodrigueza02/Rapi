@@ -1,0 +1,14 @@
+C:\Users\jiliana rodriguez\Downloads\rappi-stream\rappi-stream\backend\microservices\dashboard-aggregator\src\main\java\aggregator\config\BeanConfig.java
+C:\Users\jiliana rodriguez\Downloads\rappi-stream\rappi-stream\backend\microservices\dashboard-aggregator\src\main\java\aggregator\config\KafkaConfig.java
+C:\Users\jiliana rodriguez\Downloads\rappi-stream\rappi-stream\backend\microservices\dashboard-aggregator\src\main\java\aggregator\config\WebSocketClientConfig.java
+C:\Users\jiliana rodriguez\Downloads\rappi-stream\rappi-stream\backend\microservices\dashboard-aggregator\src\main\java\aggregator\DashboardAggregatorApplication.java
+C:\Users\jiliana rodriguez\Downloads\rappi-stream\rappi-stream\backend\microservices\dashboard-aggregator\src\main\java\aggregator\database\OrderHistoryEntity.java
+C:\Users\jiliana rodriguez\Downloads\rappi-stream\rappi-stream\backend\microservices\dashboard-aggregator\src\main\java\aggregator\database\OrderHistoryJpaRepository.java
+C:\Users\jiliana rodriguez\Downloads\rappi-stream\rappi-stream\backend\microservices\dashboard-aggregator\src\main\java\aggregator\database\OrderHistoryRepositoryAdapter.java
+C:\Users\jiliana rodriguez\Downloads\rappi-stream\rappi-stream\backend\microservices\dashboard-aggregator\src\main\java\aggregator\kafka\OrderEventsListener.java
+C:\Users\jiliana rodriguez\Downloads\rappi-stream\rappi-stream\backend\microservices\dashboard-aggregator\src\main\java\aggregator\model\OrderView.java
+C:\Users\jiliana rodriguez\Downloads\rappi-stream\rappi-stream\backend\microservices\dashboard-aggregator\src\main\java\aggregator\ports\DashboardBroadcastPort.java
+C:\Users\jiliana rodriguez\Downloads\rappi-stream\rappi-stream\backend\microservices\dashboard-aggregator\src\main\java\aggregator\ports\OrderViewRepositoryPort.java
+C:\Users\jiliana rodriguez\Downloads\rappi-stream\rappi-stream\backend\microservices\dashboard-aggregator\src\main\java\aggregator\service\DashboardAggregatorService.java
+C:\Users\jiliana rodriguez\Downloads\rappi-stream\rappi-stream\backend\microservices\dashboard-aggregator\src\main\java\aggregator\state\OrderViewState.java
+C:\Users\jiliana rodriguez\Downloads\rappi-stream\rappi-stream\backend\microservices\dashboard-aggregator\src\main\java\aggregator\websocket\WebSocketBroadcaster.java

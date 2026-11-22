@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: order-processor
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    listener:
+      simple:
+        default-requeue-rejected: false  
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1s
+          multiplier: 2
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all                          
+      properties:
+        enable.idempotence: true          
+        spring.json.add.type.headers: false
+
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:rappistream}
+    username: ${POSTGRES_USER:rappi}
+    password: ${POSTGRES_PASSWORD:rappi}
+
+  jpa:
+    hibernate:
+      ddl-auto: update                   
+    open-in-view: false
+
+app:
+  drivers: driver-1,driver-2,driver-3,driver-4

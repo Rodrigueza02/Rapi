@@ -4,6 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- Spring Boot fija las versiones de todas las dependencias -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -22,16 +23,15 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <!-- Agrega cada módulo cuando ya tenga su pom.xml escrito.
-         Un pom.xml vacío rompe toda la compilación. -->
+    <!-- Activa cada modulo quitando el comentario cuando su pom.xml ya este escrito -->
     <modules>
         <module>dtos</module>
-        <module>microservices/order-api</module>
+        <!-- <module>microservices/order-api</module> -->
         <!-- <module>microservices/order-processor</module> -->
         <!-- <module>microservices/driver-simulator</module> -->
-        <module>microservices/notification-router</module>
-        <module>microservices/sms-worker</module> 
-        <module>microservices/push-worker</module>
+        <!-- <module>microservices/notification-router</module> -->
+        <!-- <module>microservices/sms-worker</module> -->
+        <!-- <module>microservices/push-worker</module> -->
         <!-- <module>microservices/dashboard-aggregator</module> -->
         <!-- <module>microservices/dashboard-backend</module> -->
     </modules>
