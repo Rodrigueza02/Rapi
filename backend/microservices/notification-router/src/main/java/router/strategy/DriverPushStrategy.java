@@ -1,10 +1,10 @@
 package notificationrouter.strategy;
 
 import dtos.DriverAssignedEvent;
-import dtos.DriverArrivingEvent;
 import dtos.Names;
 import dtos.NotificationCommand;
 import dtos.NotificationPayloadRecord;
+import dtos.OrderDeliveredEvent;
 import dtos.OrderEvent;
 
 import org.springframework.stereotype.Component;
@@ -18,7 +18,7 @@ public class DriverPushStrategy
     @Override
     public boolean supports(OrderEvent event) {
         return event instanceof DriverAssignedEvent
-                || event instanceof DriverArrivingEvent;
+                || event instanceof OrderDeliveredEvent;
     }
 
     @Override
@@ -30,7 +30,7 @@ public class DriverPushStrategy
 
         String message = event instanceof DriverAssignedEvent
                 ? "New delivery assigned"
-                : "Driver arrival registered";
+                : "Delivery completed";
 
         NotificationPayloadRecord payload =
                 new NotificationPayloadRecord(

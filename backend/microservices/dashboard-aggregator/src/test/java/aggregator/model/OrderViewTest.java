@@ -22,7 +22,7 @@ class OrderViewTest {
     void shouldCreateAssignedOrder() {
         DriverAssignedEvent event =
                 new DriverAssignedEvent(
-                        "order-1", "driver-1", start);
+                        "order-1", "driver-1", "customer-1", start);
 
         OrderView view = OrderView.from(event);
 
@@ -38,7 +38,7 @@ class OrderViewTest {
         boolean changed = view.apply(
                 new DriverArrivingEvent(
                         "order-1",
-                        "driver-1",
+                        "driver-1", "customer-1",
                         start.plusSeconds(60))
         );
 
@@ -52,12 +52,12 @@ class OrderViewTest {
 
         view.apply(new DriverArrivingEvent(
                 "order-1",
-                "driver-1",
+                "driver-1", "customer-1",
                 start.plusSeconds(60)));
 
         view.apply(new OrderDeliveredEvent(
                 "order-1",
-                "driver-1",
+                "driver-1", "customer-1",
                 start.plusSeconds(120)));
 
         assertEquals(OrderViewState.DELIVERED, view.getState());
@@ -72,7 +72,7 @@ class OrderViewTest {
                 () -> view.apply(
                         new OrderDeliveredEvent(
                                 "order-1",
-                                "driver-1",
+                                "driver-1", "customer-1",
                                 start.plusSeconds(120)))
         );
     }
@@ -84,7 +84,7 @@ class OrderViewTest {
         DriverArrivingEvent event =
                 new DriverArrivingEvent(
                         "order-1",
-                        "driver-1",
+                        "driver-1", "customer-1",
                         start.plusSeconds(60));
 
         assertTrue(view.apply(event));
@@ -100,7 +100,7 @@ class OrderViewTest {
                 () -> view.apply(
                         new DriverArrivingEvent(
                                 "order-2",
-                                "driver-1",
+                                "driver-1", "customer-1",
                                 start.plusSeconds(60)))
         );
     }
@@ -109,7 +109,7 @@ class OrderViewTest {
         return OrderView.from(
                 new DriverAssignedEvent(
                         "order-1",
-                        "driver-1",
+                        "driver-1", "customer-1",
                         start)
         );
     }

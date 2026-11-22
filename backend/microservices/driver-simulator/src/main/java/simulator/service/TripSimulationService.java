@@ -42,7 +42,7 @@ public class TripSimulationService {
             return;
         }
 
-        Trip trip = Trip.start(event.orderId(), event.driverId());
+        Trip trip = Trip.start(event.orderId(), event.driverId(), event.customerId());
         Duration toArrive = timing.timeToArrive(trip);
         Duration toDeliver = timing.timeToDeliver(trip);
 
@@ -54,11 +54,11 @@ public class TripSimulationService {
 
     private void arrive(Trip trip) {
         trip.markArriving();
-        eventPublisher.publish(new DriverArrivingEvent(trip.orderId(), trip.driverId(), clock.instant()));
-    }
+        eventPublisher.publish(new DriverArrivingEvent(
+            trip.orderId(), trip.driverId(), trip.customerId(), clock.instant()));    }
 
     private void deliver(Trip trip) {
         trip.markDelivered();
-        eventPublisher.publish(new OrderDeliveredEvent(trip.orderId(), trip.driverId(), clock.instant()));
-    }
+        eventPublisher.publish(new OrderDeliveredEvent(
+                trip.orderId(), trip.driverId(), trip.customerId(), clock.instant()));    }
 }

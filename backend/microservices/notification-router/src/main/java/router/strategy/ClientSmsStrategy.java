@@ -1,11 +1,11 @@
 package notificationrouter.strategy;
 
+import dtos.DriverArrivingEvent;
+import dtos.Names;
 import dtos.NotificationCommand;
-import dtos.OrderDeliveredEvent;
+import dtos.NotificationPayloadRecord;
 import dtos.OrderEvent;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -14,12 +14,9 @@ import java.util.Optional;
 public class ClientSmsStrategy
         implements NotificationMappingStrategy {
 
-    private static final Logger log =
-            LoggerFactory.getLogger(ClientSmsStrategy.class);
-
     @Override
     public boolean supports(OrderEvent event) {
-        return event instanceof OrderDeliveredEvent;
+        return event instanceof DriverArrivingEvent;
     }
 
     @Override
@@ -29,11 +26,18 @@ public class ClientSmsStrategy
             return Optional.empty();
         }
 
-        log.warn(
-                "SMS mapping pending customer lookup for orderId={}",
-                event.orderId()
-        );
+        NotificationPayloadRecord payload =
+                new NotificationPayloadRecord(
+                        event.orderId(),
+                        event.customerId(),
+                        "Your driver is arriving"
+                );
 
-        return Optional.empty();
+        return Optional.of(
+                NotificationCommand.of(
+                        Names.ROUTING_CLIENT_SMS,
+                        payload
+                )
+        );
     }
 }

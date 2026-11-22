@@ -39,7 +39,7 @@ class OrderHistoryRepositoryAdapterTest {
         OrderView view = OrderView.from(
                 new DriverAssignedEvent(
                         "order-1",
-                        "driver-1",
+                        "driver-1", "customer-1",
                         start
                 )
         );
@@ -63,7 +63,7 @@ class OrderHistoryRepositoryAdapterTest {
         OrderView assigned = OrderView.from(
                 new DriverAssignedEvent(
                         "order-1",
-                        "driver-1",
+                        "driver-1", "customer-1",
                         start
                 )
         );
