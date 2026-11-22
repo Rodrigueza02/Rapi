@@ -1,5 +1,6 @@
-
 package com.rappistream.auth.config;
+
+import com.rappistream.auth.security.JwtAuthenticationConverter;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,7 +23,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity http
+            HttpSecurity http,
+            JwtAuthenticationConverter jwtConverter
     ) throws Exception {
 
         http
@@ -38,10 +40,20 @@ public class SecurityConfig {
                     "/api/auth/login",
                     "/api/auth/register"
                 ).permitAll()
+                .requestMatchers(
+                    HttpMethod.GET,
+                    "/api/auth/me"
+                ).hasAnyRole(
+                    "ADMIN",
+                    "CLIENTE",
+                    "REPARTIDOR"
+                )
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 ->
-                oauth2.jwt(jwt -> {})
+                oauth2.jwt(jwt ->
+                    jwt.jwtAuthenticationConverter(jwtConverter)
+                )
             );
 
         return http.build();

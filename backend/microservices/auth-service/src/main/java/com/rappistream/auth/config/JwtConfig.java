@@ -38,10 +38,19 @@ public class JwtConfig {
     }
 
     @Bean
-    public JwtDecoder jwtDecoder(SecretKey secretKey) {
-        return NimbusJwtDecoder
+    public JwtDecoder jwtDecoder(
+            SecretKey secretKey,
+            @Value("${app.jwt.issuer}") String issuer
+    ) {
+        NimbusJwtDecoder decoder = NimbusJwtDecoder
             .withSecretKey(secretKey)
             .macAlgorithm(MacAlgorithm.HS256)
             .build();
+
+        decoder.setJwtValidator(
+            JwtValidators.createDefaultWithIssuer(issuer)
+        );
+
+        return decoder;
     }
 }
