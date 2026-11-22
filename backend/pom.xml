@@ -33,6 +33,6 @@
         <!-- <module>microservices/sms-worker</module> -->
         <!-- <module>microservices/push-worker</module> -->
         <module>microservices/dashboard-aggregator</module>
-        <!-- <module>microservices/dashboard-backend</module> -->
+        <module>microservices/dashboard-backend</module>
     </modules>
 </project>
