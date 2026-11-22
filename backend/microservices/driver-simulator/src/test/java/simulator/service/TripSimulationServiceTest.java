@@ -53,7 +53,7 @@ class TripSimulationServiceTest {
     private TripSimulationService service;
 
     private DriverAssignedEvent assignedEvent() {
-        return new DriverAssignedEvent("order-1", "driver-1", NOW);
+        return new DriverAssignedEvent("order-1", "driver-1", "customer-1", NOW);
     }
 
     @Test
@@ -76,8 +76,8 @@ class TripSimulationServiceTest {
 
         // Assert: salieron los dos eventos, en este orden
         InOrder inOrder = inOrder(eventPublisher);
-        inOrder.verify(eventPublisher).publish(new DriverArrivingEvent("order-1", "driver-1", NOW));
-        inOrder.verify(eventPublisher).publish(new OrderDeliveredEvent("order-1", "driver-1", NOW));
+        inOrder.verify(eventPublisher).publish(new DriverArrivingEvent("order-1", "driver-1", "customer-1", NOW));
+        inOrder.verify(eventPublisher).publish(new OrderDeliveredEvent("order-1", "driver-1", "customer-1", NOW));
     }
 
     @Test

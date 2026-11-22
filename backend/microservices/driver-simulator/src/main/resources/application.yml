@@ -7,13 +7,10 @@ spring:
     consumer:
       group-id: driver-simulator-group      
       auto-offset-reset: latest             
-      properties:
-        spring.json.use.type.headers: false
     producer:
       acks: all
       properties:
         enable.idempotence: true
-        spring.json.add.type.headers: false
 
 app:
   simulation:

@@ -50,7 +50,7 @@ class DashboardAggregatorServiceTest {
         DriverAssignedEvent event =
                 new DriverAssignedEvent(
                         "order-1",
-                        "driver-1",
+                        "driver-1", "customer-1",
                         start
                 );
 
@@ -80,7 +80,7 @@ class DashboardAggregatorServiceTest {
         DriverArrivingEvent event =
                 new DriverArrivingEvent(
                         "order-1",
-                        "driver-1",
+                        "driver-1", "customer-1",
                         start.plusSeconds(60)
                 );
 
@@ -99,7 +99,7 @@ class DashboardAggregatorServiceTest {
 
         view.apply(new DriverArrivingEvent(
                 "order-1",
-                "driver-1",
+                "driver-1", "customer-1",
                 start.plusSeconds(60)
         ));
 
@@ -108,7 +108,7 @@ class DashboardAggregatorServiceTest {
 
         service.process(new OrderDeliveredEvent(
                 "order-1",
-                "driver-1",
+                "driver-1", "customer-1",
                 start.plusSeconds(120)
         ));
 
@@ -126,7 +126,7 @@ class DashboardAggregatorServiceTest {
         DriverArrivingEvent event =
                 new DriverArrivingEvent(
                         "order-1",
-                        "driver-1",
+                        "driver-1", "customer-1",
                         start.plusSeconds(60)
                 );
 
@@ -150,7 +150,7 @@ class DashboardAggregatorServiceTest {
         DriverArrivingEvent event =
                 new DriverArrivingEvent(
                         "order-1",
-                        "driver-1",
+                        "driver-1", "customer-1",
                         start.plusSeconds(60)
                 );
 
@@ -181,7 +181,7 @@ class DashboardAggregatorServiceTest {
         return OrderView.from(
                 new DriverAssignedEvent(
                         "order-1",
-                        "driver-1",
+                        "driver-1", "customer-1",
                         start
                 )
         );

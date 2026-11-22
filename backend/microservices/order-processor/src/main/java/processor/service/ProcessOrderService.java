@@ -39,8 +39,8 @@ public class ProcessOrderService {
                 .orElseThrow(() -> new IllegalStateException(
                         "Order " + order.orderId() + " has no driver assigned"));
 
-        eventPublisher.publish(new DriverAssignedEvent(
-                order.orderId(), assignment.driverId(), assignment.assignedAt()));
+                eventPublisher.publish(new DriverAssignedEvent(
+                order.orderId(), assignment.driverId(), order.customerId(), assignment.assignedAt()));
     }
 
     private Order registerNewOrder(OrderCreatedCommand command) {

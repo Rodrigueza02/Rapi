@@ -6,17 +6,19 @@ public final class Trip {
 
     private final String orderId;
     private final String driverId;
+    private final String customerId;
     private Phase phase;
 
-    private Trip(String orderId, String driverId) {
+    private Trip(String orderId, String driverId, String customerId) {
         this.orderId = requireText(orderId, "orderId");
         this.driverId = requireText(driverId, "driverId");
+        this.customerId = requireText(customerId, "customerId");
         this.phase = Phase.EN_ROUTE;
     }
 
     /** Todo viaje nace EN_ROUTE (en camino). */
-    public static Trip start(String orderId, String driverId) {
-        return new Trip(orderId, driverId);
+    public static Trip start(String orderId, String driverId, String customerId) {
+        return new Trip(orderId, driverId, customerId);
     }
 
     public void markArriving() {
@@ -35,6 +37,10 @@ public final class Trip {
 
     public String driverId() {
         return driverId;
+    }
+
+    public String customerId() {
+        return customerId;
     }
 
     public Phase phase() {
