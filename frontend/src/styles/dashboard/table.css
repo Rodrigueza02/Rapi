@@ -1,0 +1,35 @@
+/* table.css — tabla de pedidos y toolbar */
+
+.orders-toolbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.orders-search  { display:flex; align-items:center; gap:8px; padding:0 12px; height:38px; border:1.5px solid var(--border); border-radius:10px; background:#FAFAFA; color:var(--text-muted); min-width:260px; }
+.orders-search:focus-within { border-color:var(--orange); box-shadow:0 0 0 3px var(--orange-glow); }
+.orders-search input { border:0; outline:0; background:none; font-size:13px; color:var(--text); flex:1; }
+.orders-search input::placeholder { color:#C0BCCA; }
+.orders-toolbar-actions { display:flex; gap:8px; }
+
+.table-wrap    { overflow-x:auto; margin-top:16px; border-radius:12px; border:1px solid #F2E9E2; }
+.orders-table  { width:100%; border-collapse:collapse; font-size:13px; }
+.orders-table th { padding:12px 16px; text-align:left; font-size:11px; font-weight:700; color:var(--text-muted); letter-spacing:.8px; text-transform:uppercase; background:#FAFAF9; border-bottom:1px solid #F2E9E2; }
+.orders-table td { padding:13px 16px; border-bottom:1px solid #F7F4F1; vertical-align:middle; }
+.orders-table tr:last-child td { border-bottom:0; }
+.orders-table tr:hover td { background:#FFFAF6; }
+
+.order-id-badge { font-family:monospace; font-size:12px; font-weight:700; color:var(--orange); background:#FFF4EB; padding:3px 8px; border-radius:6px; }
+.driver-chip    { display:flex; align-items:center; gap:8px; }
+.driver-avatar  { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,#FFA347,#FB7828); color:#fff; font-size:11px; font-weight:700; display:grid; place-items:center; flex-shrink:0; text-transform:uppercase; }
+.order-time     { color:var(--text-muted); font-size:12px; }
+.order-actions  { display:flex; gap:4px; }
+
+.table-state        { display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; min-height:120px; color:var(--text-muted); font-size:14px; text-align:center; }
+.table-state--error { color:#B91C1C; }
+
+.status-badge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap; }
+.status-badge::before { content:''; width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; }
+.status--assigned  { color:#B45309; background:#FEF3C7; }
+.status--arriving  { color:#1D4ED8; background:#DBEAFE; }
+.status--delivered { color:#065F46; background:#D1FAE5; }
+
+@media (max-width:768px) {
+  .orders-toolbar { flex-direction:column; align-items:stretch; }
+  .orders-search  { min-width:unset; }
+}

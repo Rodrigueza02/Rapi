@@ -1,0 +1,38 @@
+@media (max-width: 900px) {
+  .admin-sidebar {
+    width: 205px;
+  }
+
+  .sidebar-link {
+    gap: 10px;
+    padding: 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 650px) {
+  .admin-sidebar {
+    width: 100%;
+    min-height: auto;
+    padding: 14px;
+  }
+
+  .sidebar-brand {
+    min-height: 65px;
+    margin-bottom: 12px;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .sidebar-link {
+    flex-shrink: 0;
+  }
+
+  .sidebar-bottom {
+    display: none;
+  }
+}

@@ -1,0 +1,29 @@
+/* base.css — reset, variables CSS y utilidades globales */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --orange:       #F58232;
+  --orange-light: #FFA347;
+  --orange-dark:  #E06A1A;
+  --orange-glow:  rgba(245,130,50,.18);
+  --bg:           #FFF9F4;
+  --card-bg:      #FFFFFF;
+  --text:         #28252A;
+  --text-muted:   #93909B;
+  --border:       #EAE7E6;
+  --radius-sm:    10px;
+  --radius-md:    14px;
+  --radius-lg:    24px;
+  font-family: Inter, Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+body    { min-width: 320px; }
+button  { cursor: pointer; font: inherit; }
+input   { font: inherit; }
+a       { text-decoration: none; color: inherit; }
+img,svg { display: block; }
