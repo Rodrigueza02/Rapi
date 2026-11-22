@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: dashboard-backend
+
+server:
+  port: ${SERVER_PORT:8086}
+
+logging:
+  level:
+    backend: INFO

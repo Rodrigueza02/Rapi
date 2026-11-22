@@ -1,0 +1,3 @@
+simulator\model\TripTest.class
+simulator\strategy\TripTimingStrategyTest.class
+simulator\service\TripSimulationServiceTest.class
