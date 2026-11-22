@@ -91,6 +91,7 @@ services:
     environment:
       <<: *rabbit-env
       SERVER_PORT: "8081"
+      JWT_SECRET: ${RAPPI_JWT_SECRET:?Configura RAPPI_JWT_SECRET en .env}
     ports:
       - "127.0.0.1:8081:8081"
     depends_on:
@@ -98,6 +99,28 @@ services:
     networks:
       - internal
       - public
+
+    
+  auth-service:
+    <<: *java-common
+    build:
+      context: ./backend
+      dockerfile: microservices/auth-service/Dockerfile
+    environment:
+      SERVER_PORT: "8087"
+      DB_URL: jdbc:postgresql://postgres:5432/rappistream
+      DB_USER: rappi
+      DB_PASSWORD: ${RAPPI_DB_PASSWORD:-rappi_local_2026}
+      JWT_SECRET: ${RAPPI_JWT_SECRET:?Configura RAPPI_JWT_SECRET en .env}
+    ports:
+      - "127.0.0.1:8087:8087"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+      - public
+
 
   order-processor:
     <<: *java-common

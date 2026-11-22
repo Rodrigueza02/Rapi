@@ -1,0 +1,21 @@
+# Archivos generados por Maven
+**/target/
+
+# Archivos de entorno y secretos
+.env
+**/.env
+
+# Archivos temporales
+*.log
+
+.env
+.env.*
+!.env.example
+
+node_modules/
+**/node_modules/
+
+target/
+**/target/
+
+*.pem
