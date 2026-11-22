@@ -1,10 +1,13 @@
+dtos\AuthResponse.class
 dtos\OrderCreatedCommand.class
-dtos\CreateOrderRequest.class
 dtos\DriverArrivingEvent.class
-dtos\NotificationCommand.class
+dtos\LoginRequest.class
 dtos\NotificationPayloadRecord.class
+dtos\DriverAssignedEvent.class
+dtos\CreateOrderRequest.class
+dtos\NotificationCommand.class
 dtos\OrderDeliveredEvent.class
 dtos\OrderEvent.class
 dtos\Names.class
-dtos\DriverAssignedEvent.class
+dtos\RegisterRequest.class
 dtos\Validation.class

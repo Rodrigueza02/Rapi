@@ -34,5 +34,6 @@
         <module>microservices/push-worker</module> 
         <module>microservices/dashboard-aggregator</module> 
         <module>microservices/dashboard-backend</module>
+        <module>microservices/auth-service</module>
     </modules>
 </project>

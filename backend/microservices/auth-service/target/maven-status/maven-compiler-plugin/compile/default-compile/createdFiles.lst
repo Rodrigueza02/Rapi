@@ -1,0 +1,8 @@
+com\rappistream\auth\entity\Usuario.class
+com\rappistream\auth\AuthServiceApplication.class
+com\rappistream\auth\entity\Rol.class
+com\rappistream\auth\config\SecurityConfig.class
+com\rappistream\auth\config\JwtConfig.class
+com\rappistream\auth\controller\AuthController.class
+com\rappistream\auth\service\AuthService.class
+com\rappistream\auth\repository\UsuarioRepository.class
