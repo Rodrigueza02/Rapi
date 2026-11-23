@@ -21,8 +21,7 @@ export default defineConfig({
       '/api/order': {
         target:       'http://localhost:8081',
         changeOrigin: true,
-      },
-      // dashboard/orders, dashboard/stats, dashboard/round-robin
+      },      // dashboard/orders, dashboard/stats, dashboard/round-robin
       '/api/dashboard': {
         target:       'http://localhost:8085',
         changeOrigin: true,

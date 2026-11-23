@@ -1,37 +1,40 @@
+/**
+ * AdminDashboard.jsx
+ * SRP: única responsabilidad — orquestar estado de modales y datos del dashboard.
+ * Toda la lógica de negocio vive en los hooks y componentes hijos.
+ */
+
 import { useCallback, useState } from 'react';
 import { Package } from 'lucide-react';
 
-import DashboardStats      from '../../components/dashboard/DashboardStats.jsx';
-import OrdersToolbar       from '../../components/orders/OrdersToolbar.jsx';
-import OrdersTable         from '../../components/orders/OrdersTable.jsx';
-import RoundRobinWheel     from '../../components/dashboard/RoundRobinWheel.jsx';
-import RoundRobinNextCard  from '../../components/dashboard/RoundRobinNextCard.jsx';
-import RequestsPanel       from '../../components/dashboard/RequestsPanel.jsx';
-import PaymentsPanel       from '../../components/dashboard/PaymentsPanel.jsx';
-import EmailsPanel         from '../../components/dashboard/EmailsPanel.jsx';
+import DashboardStats     from '../../components/dashboard/DashboardStats.jsx';
+import OrdersToolbar      from '../../components/orders/OrdersToolbar.jsx';
+import OrdersTable        from '../../components/orders/OrdersTable.jsx';
+import OrderDetailModal   from '../../components/orders/OrderDetailModal.jsx';
+import CreateOrderModal   from '../../components/orders/CreateOrderModal.jsx';
+import CancelOrderModal   from '../../components/orders/CancelOrderModal.jsx';
+import RoundRobinWheel    from '../../components/dashboard/RoundRobinWheel.jsx';
+import RoundRobinNextCard from '../../components/dashboard/RoundRobinNextCard.jsx';
+import RequestsPanel      from '../../components/dashboard/RequestsPanel.jsx';
+import PaymentsPanel      from '../../components/dashboard/PaymentsPanel.jsx';
+import EmailsPanel        from '../../components/dashboard/EmailsPanel.jsx';
 
-import useOrders      from '../../hooks/useOrders.js';
-import useRoundRobin  from '../../hooks/useRoundRobin.js';
-import useWebSocket   from '../../hooks/useWebSocket.js';
+import useOrders     from '../../hooks/useOrders.js';
+import useRoundRobin from '../../hooks/useRoundRobin.js';
+import useWebSocket  from '../../hooks/useWebSocket.js';
 
-/**
- * Página principal del panel administrativo.
- *
- * Responsabilidades:
- *  - Orquestar los hooks de datos
- *  - Escuchar eventos WebSocket y refrescar la tabla/stats
- *  - Pasar datos hacia abajo a cada componente
- *
- * Principio SRP: cada componente hijo sabe solo renderizar su sección.
- */
 export default function AdminDashboard() {
-  const [search, setSearch] = useState('');
+  /* ── Estado de UI ─────────────────────────────────────────────────────── */
+  const [search,           setSearch]           = useState('');
+  const [detailOrderId,    setDetailOrderId]    = useState(null);
+  const [cancelOrderId,    setCancelOrderId]    = useState(null);
+  const [showCreateModal,  setShowCreateModal]  = useState(false);
 
-  // ── Datos del backend ──────────────────────────────────────────────────────
-  const { orders, loading: ordersLoading, error: ordersError, reload: reloadOrders } = useOrders();
+  /* ── Datos del backend ────────────────────────────────────────────────── */
+  const { orders, loading, error, reload: reloadOrders } = useOrders();
   const { roundRobin, loading: rrLoading, reload: reloadRR } = useRoundRobin();
 
-  // ── WebSocket — refresca tabla y rueda cuando llega un evento ─────────────
+  /* ── WebSocket: refresca tabla y rueda con cada evento real ───────────── */
   const onWsEvent = useCallback(() => {
     reloadOrders();
     reloadRR();
@@ -39,20 +42,24 @@ export default function AdminDashboard() {
 
   useWebSocket(onWsEvent);
 
-  // ── Filtrado local por búsqueda ────────────────────────────────────────────
+  /* ── Filtrado local ───────────────────────────────────────────────────── */
   const filtered = orders.filter(o =>
     !search ||
     o.order_id.toLowerCase().includes(search.toLowerCase()) ||
     o.driver_id?.toLowerCase().includes(search.toLowerCase())
   );
 
+  /* ── Handlers ─────────────────────────────────────────────────────────── */
+  function handleOrderCreated() { reloadOrders(); }
+  function handleOrderCancelled() { reloadOrders(); }
+
   return (
     <div className="admin-dashboard">
 
-      {/* ── Tarjetas de métricas ─────────────────────────────────────────── */}
+      {/* ── Métricas ─────────────────────────────────────────────────────── */}
       <DashboardStats />
 
-      {/* ── Tabla de pedidos recientes ───────────────────────────────────── */}
+      {/* ── Tabla de pedidos ─────────────────────────────────────────────── */}
       <section className="dashboard-section">
         <div className="section-heading">
           <div className="section-title">
@@ -62,20 +69,21 @@ export default function AdminDashboard() {
           <OrdersToolbar
             search={search}
             onSearch={setSearch}
-            onNewOrder={() => {/* Segunda entrega */}}
+            onNewOrder={() => setShowCreateModal(true)}
           />
         </div>
-
         <OrdersTable
           orders={filtered}
-          loading={ordersLoading}
-          error={ordersError}
+          loading={loading}
+          error={error}
+          onViewDetail={setDetailOrderId}
+          onCancel={setCancelOrderId}
         />
       </section>
 
-      {/* ── Round Robin + Solicitudes ────────────────────────────────────── */}
+      {/* ── Round Robin + Solicitudes ─────────────────────────────────────── */}
       <div className="dashboard-row">
-        <section className="dashboard-section dashboard-section--rr">
+        <section className="dashboard-section">
           <div className="section-heading">
             <div className="section-title">
               <span className="rr-icon-title">🔄</span>
@@ -85,21 +93,47 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-
           <div className="rr-layout">
-            <RoundRobinWheel  roundRobin={roundRobin} />
+            <RoundRobinWheel    roundRobin={roundRobin} />
             <RoundRobinNextCard roundRobin={roundRobin} loading={rrLoading} />
           </div>
         </section>
 
-        <RequestsPanel requests={[]} />
+        <RequestsPanel
+          requests={[]}
+          onApprove={req => setCancelOrderId(req.orderId)}
+          onReject={() => {}}
+        />
       </div>
 
-      {/* ── Pagos + Correos ──────────────────────────────────────────────── */}
+      {/* ── Pagos + Correos ───────────────────────────────────────────────── */}
       <div className="dashboard-row">
         <PaymentsPanel stats={null} />
         <EmailsPanel   stats={null} />
       </div>
+
+      {/* ── Modales ───────────────────────────────────────────────────────── */}
+      {detailOrderId && (
+        <OrderDetailModal
+          orderId={detailOrderId}
+          onClose={() => setDetailOrderId(null)}
+        />
+      )}
+
+      {cancelOrderId && (
+        <CancelOrderModal
+          orderId={cancelOrderId}
+          onClose={() => setCancelOrderId(null)}
+          onCancelled={handleOrderCancelled}
+        />
+      )}
+
+      {showCreateModal && (
+        <CreateOrderModal
+          onClose={() => setShowCreateModal(false)}
+          onCreated={handleOrderCreated}
+        />
+      )}
 
     </div>
   );

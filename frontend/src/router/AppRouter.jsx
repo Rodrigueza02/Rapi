@@ -1,9 +1,3 @@
-/**
- * AppRouter.jsx
- * SRP: única responsabilidad — declarar el árbol de rutas de la aplicación.
- * No contiene lógica de sesión ni de layout.
- */
-
 import { Navigate, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from '../components/auth/ProtectedRoute.jsx';
 import AdminLayout    from '../layouts/AdminLayout.jsx';

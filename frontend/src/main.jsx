@@ -6,6 +6,7 @@ import App from './App.jsx';
 import './styles/common/base.css';
 import './styles/common/animations.css';
 import './styles/common/buttons.css';
+import './styles/common/modal.css';
 
 /* ── Login ────────────────────────────────────────────────────── */
 import './styles/login/login.css';
