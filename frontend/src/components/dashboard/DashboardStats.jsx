@@ -8,6 +8,16 @@ import useDashboardStats from '../../hooks/useDashboardStats.js';
 import useOrders         from '../../hooks/useOrders.js';
 import { STATE_SEQUENCE, STATUS_LABEL, STATUS_COLOR } from '../../constants/orderStatus.js';
 
+const STATE_ICON = {
+  CREATED:    '📋',
+  PREPARED:   '🍳',
+  ASSIGNED:   '🛵',
+  ON_THE_WAY: '🚀',
+  ARRIVING:   '📍',
+  DELIVERED:  '✅',
+  CANCELLED:  '❌',
+};
+
 export default function DashboardStats() {
   const { stats, loading: sLoading } = useDashboardStats(15_000);
   const { orders }                   = useOrders();
@@ -47,8 +57,11 @@ export default function DashboardStats() {
       <section className="state-cards-grid" aria-label="Pedidos por estado">
         {STATE_SEQUENCE.map(state => (
           <article key={state} className={`state-card ${STATUS_COLOR[state]}`}>
-            <span className="state-card-label">{STATUS_LABEL[state]}</span>
+            <span className="state-card-icon" aria-hidden="true">
+              {STATE_ICON[state]}
+            </span>
             <strong className="state-card-count">{countByState[state]}</strong>
+            <span className="state-card-label">{STATUS_LABEL[state]}</span>
           </article>
         ))}
       </section>
