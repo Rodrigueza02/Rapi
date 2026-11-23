@@ -17,3 +17,6 @@ node_modules/
 # Logs y temporales
 *.log
 *.pem
+
+# Copias de seguridad locales
+*.bak
