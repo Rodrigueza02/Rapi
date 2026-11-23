@@ -222,15 +222,20 @@ services:
       context: ./backend
       dockerfile: microservices/dashboard-aggregator/Dockerfile
     environment:
-      <<: *kafka-env
+      <<: [*kafka-env, *rabbit-env]
       DB_URL: jdbc:postgresql://postgres:5432/rappistream
       DB_USER: rappi
       DB_PASSWORD: ${RAPPI_DB_PASSWORD:-rappi_local_2026}
       DASHBOARD_BACKEND_WS_URL: ws://dashboard-backend:8086/ws/ingest
+      JWT_SECRET: ${RAPPI_JWT_SECRET:?Configura RAPPI_JWT_SECRET en .env}
+    ports:
+      - "127.0.0.1:8085:8085"
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       dashboard-backend:
         condition: service_started
@@ -238,6 +243,29 @@ services:
       - internal
       - public
 
+  email-worker:
+    <<: *java-common
+    build:
+      context: ./backend
+      dockerfile: microservices/email-worker/Dockerfile
+    profiles: [email]
+    environment:
+      <<: *rabbit-env
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: rappistream
+      DB_USER: rappi
+      DB_PASSWORD: ${RAPPI_DB_PASSWORD:-rappi_local_2026}
+      GMAIL_USER: ${GMAIL_USER:-change-me@gmail.com}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-change-me}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - internal
+      - public
 
 networks:
   internal:

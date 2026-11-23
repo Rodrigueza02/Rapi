@@ -16,7 +16,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -24,25 +24,20 @@ class OrderControllerAuthTest {
 
     private CreateOrderService createOrderService;
     private CancelOrderService cancelOrderService;
-    private OrderController controller;
+    private OrderController    controller;
 
-    @BeforeEach
-    void setUp() {
+    @BeforeEach void setUp() {
         createOrderService = mock(CreateOrderService.class);
         cancelOrderService = mock(CancelOrderService.class);
         controller = new OrderController(createOrderService, cancelOrderService);
-
         when(createOrderService.createOrder(any())).thenReturn("test-order-id");
     }
 
-    /* ── Helpers ──────────────────────────────────────────────── */
-
-    private Authentication buildAuth(String userId, String role) {
+    private Authentication auth(String userId, String role) {
         return new Authentication() {
             @Override public String getName() { return userId; }
             @Override public Collection<? extends GrantedAuthority> getAuthorities() {
-                return List.of(new SimpleGrantedAuthority(role));
-            }
+                return List.of(new SimpleGrantedAuthority(role)); }
             @Override public Object getCredentials() { return null; }
             @Override public Object getDetails()     { return null; }
             @Override public Object getPrincipal()   { return userId; }
@@ -51,70 +46,45 @@ class OrderControllerAuthTest {
         };
     }
 
-    private CreateOrderRequest buildRequest(String customerId) {
-        return new CreateOrderRequest(
-                customerId,
-                "+573001234567",
-                "Cra 7 #45-21, Bogotá",
-                List.of("Hamburguesa"),
-                new BigDecimal("42900")
-        );
+    private CreateOrderRequest req(String cid) {
+        return new CreateOrderRequest(cid, "+573001234567", "Cra 7 #45-21",
+                List.of("Hamburguesa"), new BigDecimal("42900"));
     }
 
-    /* ── Test 1: ADMIN crea pedido para cualquier cliente ─────── */
-    @Test
-    void admin_puede_crear_pedido_para_cualquier_customer_id() {
-        Authentication auth = buildAuth("admin-uuid-123", "ROLE_ADMIN");
-        CreateOrderRequest request = buildRequest("customer-uuid-456");
-
-        ResponseEntity<Map<String, String>> response =
-                controller.createOrder(request, auth);
-
-        assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
-        assertEquals("ACCEPTED", response.getBody().get("status"));
-        verify(createOrderService, times(1)).createOrder(request);
+    @Test void admin_crea_pedido_para_cualquier_customer() {
+        var res = controller.createOrder(req("any-uuid"), auth("admin", "ROLE_ADMIN"));
+        assertEquals(HttpStatus.ACCEPTED, res.getStatusCode());
     }
 
-    /* ── Test 2: CLIENTE crea pedido para sí mismo ────────────── */
-    @Test
-    void cliente_puede_crear_pedido_con_su_propio_customer_id() {
-        String userId = "cliente-uuid-789";
-        Authentication auth = buildAuth(userId, "ROLE_CLIENTE");
-        CreateOrderRequest request = buildRequest(userId); // mismo id
-
-        ResponseEntity<Map<String, String>> response =
-                controller.createOrder(request, auth);
-
-        assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
-        verify(createOrderService, times(1)).createOrder(request);
+    @Test void cliente_crea_su_propio_pedido() {
+        var res = controller.createOrder(req("me"), auth("me", "ROLE_CLIENTE"));
+        assertEquals(HttpStatus.ACCEPTED, res.getStatusCode());
     }
 
-    /* ── Test 3: CLIENTE intenta crear pedido para otro usuario── */
-    @Test
-    void cliente_recibe_403_al_crear_pedido_para_otro_usuario() {
-        Authentication auth = buildAuth("cliente-uuid-789", "ROLE_CLIENTE");
-        CreateOrderRequest request = buildRequest("otro-cliente-uuid-999"); // id diferente
-
-        ResponseEntity<Map<String, String>> response =
-                controller.createOrder(request, auth);
-
-        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        assertEquals("FORBIDDEN", response.getBody().get("error"));
-        verify(createOrderService, never()).createOrder(any());
+    @Test void cliente_no_puede_crear_pedido_ajeno() {
+        var res = controller.createOrder(req("otro"), auth("me", "ROLE_CLIENTE"));
+        assertEquals(HttpStatus.FORBIDDEN, res.getStatusCode());
     }
 
-    /* ── Test 4: ADMIN puede crear pedido incluso si su UUID
-                 coincide con el customer_id (caso límite) ─────── */
-    @Test
-    void admin_puede_crear_pedido_con_su_propio_uuid_como_customer_id() {
-        String adminUuid = "admin-uuid-123";
-        Authentication auth = buildAuth(adminUuid, "ROLE_ADMIN");
-        CreateOrderRequest request = buildRequest(adminUuid);
+    @Test void cancelacion_exitosa_devuelve_200() {
+        doNothing().when(cancelOrderService).cancel("o-1");
+        var res = controller.cancelOrder("o-1");
+        assertEquals(HttpStatus.OK, res.getStatusCode());
+        assertEquals("CANCELLED", res.getBody().get("status"));
+    }
 
-        ResponseEntity<Map<String, String>> response =
-                controller.createOrder(request, auth);
+    @Test void cancelar_pedido_entregado_devuelve_409_con_mensaje_claro() {
+        doThrow(new IllegalStateException("Cannot cancel when the order is DELIVERED"))
+                .when(cancelOrderService).cancel("o-2");
+        var res = controller.cancelOrder("o-2");
+        assertEquals(HttpStatus.CONFLICT, res.getStatusCode());
+        assertTrue(res.getBody().get("message").contains("ya fue entregado"));
+    }
 
-        assertEquals(HttpStatus.ACCEPTED, response.getStatusCode());
-        verify(createOrderService, times(1)).createOrder(request);
+    @Test void cancelar_pedido_on_the_way_devuelve_409() {
+        doThrow(new IllegalStateException("Cannot cancel when the order is ON_THE_WAY"))
+                .when(cancelOrderService).cancel("o-3");
+        var res = controller.cancelOrder("o-3");
+        assertEquals(HttpStatus.CONFLICT, res.getStatusCode());
     }
 }

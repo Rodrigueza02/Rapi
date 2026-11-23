@@ -12,6 +12,7 @@ COPY microservices/push-worker/pom.xml microservices/push-worker/pom.xml
 COPY microservices/dashboard-aggregator/pom.xml microservices/dashboard-aggregator/pom.xml
 COPY microservices/dashboard-backend/pom.xml microservices/dashboard-backend/pom.xml
 COPY microservices/auth-service/pom.xml microservices/auth-service/pom.xml
+COPY microservices/email-worker/pom.xml microservices/email-worker/pom.xml
 
 RUN mvn -B dependency:go-offline -pl microservices/order-processor -am || true
 

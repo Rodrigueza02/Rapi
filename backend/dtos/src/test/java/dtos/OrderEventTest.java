@@ -71,15 +71,33 @@ class OrderEventTest {
     }
 
     @Test
-    void onlyTheThreeKnownEventsAreAllowed() {
+    void allFiveKnownEventsArePermitted() {
         // Act
         Class<?>[] permitted = OrderEvent.class.getPermittedSubclasses();
 
-        // Assert
+        // Assert — ahora el ciclo tiene 5 tipos de evento
         assertThat(OrderEvent.class.isSealed()).isTrue();
         assertThat(permitted).containsExactlyInAnyOrder(
+                OrderPreparedEvent.class,
                 DriverAssignedEvent.class,
                 DriverArrivingEvent.class,
-                OrderDeliveredEvent.class);
+                OrderDeliveredEvent.class,
+                OrderCancelledEvent.class);
+    }
+
+    @Test
+    void writesPreparedEventType() throws Exception {
+        OrderEvent event = new OrderPreparedEvent("order-1", null, "customer-1",
+                Instant.parse("2026-11-21T10:00:00Z"));
+        String json = mapper.writeValueAsString(event);
+        assertThat(json).contains("\"event_type\":\"ORDER_PREPARED\"");
+    }
+
+    @Test
+    void writesCancelledEventType() throws Exception {
+        OrderEvent event = new OrderCancelledEvent("order-1", "driver-1", "customer-1",
+                Instant.parse("2026-11-21T10:00:00Z"));
+        String json = mapper.writeValueAsString(event);
+        assertThat(json).contains("\"event_type\":\"ORDER_CANCELLED\"");
     }
 }

@@ -4,9 +4,13 @@ import processor.exception.InvalidStateTransitionException;
 import java.util.Map;
 
 public sealed interface OrderState
-        permits CreatedState, AssignedState, OnTheWayState, DeliveredState, CancelledState {
+        permits CreatedState, PreparedState, AssignedState, OnTheWayState, DeliveredState, CancelledState {
 
     String name();
+
+    default OrderState prepare() {
+        throw notAllowed("prepare");
+    }
 
     default OrderState assignDriver() {
         throw notAllowed("assign a driver");
@@ -39,8 +43,9 @@ public sealed interface OrderState
 
     static OrderState fromName(String name) {
         OrderState state = Map.<String, OrderState>of(
-                "CREATED",   new CreatedState(),
-                "ASSIGNED",  new AssignedState(),
+                "CREATED",    new CreatedState(),
+                "PREPARED",   new PreparedState(),
+                "ASSIGNED",   new AssignedState(),
                 "ON_THE_WAY", new OnTheWayState(),
                 "DELIVERED",  new DeliveredState(),
                 "CANCELLED",  new CancelledState()

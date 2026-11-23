@@ -1,79 +1,57 @@
 /**
  * DashboardStats.jsx
- * Muestra las cuatro métricas superiores del dashboard.
- *
- * Fuente real: useDashboardStats → GET /api/dashboard/stats
- * Campos reales del endpoint (DashboardStatsDto.java):
- *   active_orders    → pedidos en ASSIGNED o ARRIVING
- *   delivered_orders → pedidos en DELIVERED
- *   total_orders     → todos los pedidos conocidos
- *   total_drivers    → repartidores únicos vistos en esta sesión del servicio
- *
- * Los porcentajes de tendencia (▲ ▼) no tienen respaldo histórico real.
- * Se eliminaron para no presentar datos ficticios como si fueran reales.
+ * Muestra: totales globales + tarjeta por cada estado en orden cronológico.
+ * Fuente: GET /api/dashboard/stats  +  GET /api/dashboard/orders
  */
-
 import { ShoppingBag, CheckCircle2, Bike, Package } from 'lucide-react';
 import useDashboardStats from '../../hooks/useDashboardStats.js';
-import SparkLine from './SparkLine.jsx';
-
-const CARDS = [
-  {
-    key:   'active_orders',
-    label: 'Pedidos activos',
-    icon:  ShoppingBag,
-    color: 'orange',
-  },
-  {
-    key:   'delivered_orders',
-    label: 'Pedidos entregados',
-    icon:  CheckCircle2,
-    color: 'green',
-  },
-  {
-    key:   'total_drivers',
-    label: 'Repartidores activos',
-    icon:  Bike,
-    color: 'blue',
-  },
-  {
-    key:   'total_orders',
-    label: 'Total de pedidos',
-    icon:  Package,
-    color: 'red',
-  },
-];
+import useOrders         from '../../hooks/useOrders.js';
+import { STATE_SEQUENCE, STATUS_LABEL, STATUS_COLOR } from '../../constants/orderStatus.js';
 
 export default function DashboardStats() {
-  const { stats, loading } = useDashboardStats(15_000);
+  const { stats, loading: sLoading } = useDashboardStats(15_000);
+  const { orders }                   = useOrders();
+
+  // Conteo real por estado desde la lista de pedidos
+  const countByState = {};
+  for (const s of STATE_SEQUENCE) countByState[s] = 0;
+  for (const o of orders) {
+    if (countByState[o.state] !== undefined) countByState[o.state]++;
+  }
+
+  const TOP_CARDS = [
+    { key: 'total_orders',   label: 'Pedidos totales',  icon: Package,      color: 'red' },
+    { key: 'active_orders',  label: 'Pedidos activos',  icon: ShoppingBag,  color: 'orange' },
+    { key: 'delivered_orders', label: 'Entregados',     icon: CheckCircle2, color: 'green' },
+    { key: 'total_drivers',  label: 'Repartidores',     icon: Bike,         color: 'blue' },
+  ];
 
   return (
-    <section className="stats-grid" aria-label="Métricas del sistema">
-      {CARDS.map(({ key, label, icon: Icon, color }) => {
-        const value = stats?.[key] ?? null;
-
-        return (
+    <>
+      {/* Tarjetas principales */}
+      <section className="stats-grid" aria-label="Métricas globales">
+        {TOP_CARDS.map(({ key, label, icon: Icon, color }) => (
           <article key={key} className={`stat-card stat-card--${color}`}>
-
             <div className="stat-top">
-              <span className={`stat-icon stat-icon--${color}`}>
-                <Icon size={20} />
-              </span>
+              <span className={`stat-icon stat-icon--${color}`}><Icon size={20} /></span>
             </div>
-
             <span className="stat-label">{label}</span>
-
             <strong className="stat-value">
-              {loading && value === null
-                ? <span className="stat-skeleton" aria-hidden="true" />
-                : (value ?? '—')}
+              {sLoading ? <span className="stat-skeleton" aria-hidden="true" /> : (stats?.[key] ?? '—')}
             </strong>
-
-            <SparkLine color={color} />
-
           </article>
-        );
-      })}
-    </section>
+        ))}
+      </section>
+
+      {/* Tarjetas por estado — orden cronológico estricto */}
+      <section className="state-cards-grid" aria-label="Pedidos por estado">
+        {STATE_SEQUENCE.map(state => (
+          <article key={state} className={`state-card ${STATUS_COLOR[state]}`}>
+            <span className="state-card-label">{STATUS_LABEL[state]}</span>
+            <strong className="state-card-count">{countByState[state]}</strong>
+          </article>
+        ))}
+      </section>
+    </>
   );
 }

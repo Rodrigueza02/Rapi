@@ -15,6 +15,7 @@ public class OrderEntity {
     @Column(name = "status",           nullable = false, length = 20) private String status;
     @Column(name = "driver_id")        private String driverId;
     @Column(name = "created_at",       nullable = false) private Instant createdAt;
+    @Column(name = "prepared_at")      private Instant preparedAt;
     @Column(name = "assigned_at")      private Instant assignedAt;
     @Column(name = "arrived_at")       private Instant arrivedAt;
     @Column(name = "delivered_at")     private Instant deliveredAt;
@@ -24,22 +25,14 @@ public class OrderEntity {
 
     public OrderEntity(String orderId, String customerId, String deliveryAddress,
                        BigDecimal totalAmount, String status, String driverId,
-                       Instant createdAt, Instant assignedAt, Instant arrivedAt,
-                       Instant deliveredAt) {
-        this(orderId, customerId, deliveryAddress, totalAmount, status, driverId,
-             createdAt, assignedAt, arrivedAt, deliveredAt, null);
-    }
-
-    public OrderEntity(String orderId, String customerId, String deliveryAddress,
-                       BigDecimal totalAmount, String status, String driverId,
-                       Instant createdAt, Instant assignedAt, Instant arrivedAt,
-                       Instant deliveredAt, String itemsJson) {
+                       Instant createdAt, Instant preparedAt, Instant assignedAt,
+                       Instant arrivedAt, Instant deliveredAt, String itemsJson) {
         this.orderId = orderId; this.customerId = customerId;
         this.deliveryAddress = deliveryAddress; this.totalAmount = totalAmount;
         this.status = status; this.driverId = driverId;
-        this.createdAt = createdAt; this.assignedAt = assignedAt;
-        this.arrivedAt = arrivedAt; this.deliveredAt = deliveredAt;
-        this.itemsJson = itemsJson;
+        this.createdAt = createdAt; this.preparedAt = preparedAt;
+        this.assignedAt = assignedAt; this.arrivedAt = arrivedAt;
+        this.deliveredAt = deliveredAt; this.itemsJson = itemsJson;
     }
 
     public String getOrderId()         { return orderId; }
@@ -49,6 +42,7 @@ public class OrderEntity {
     public String getStatus()          { return status; }
     public String getDriverId()        { return driverId; }
     public Instant getCreatedAt()      { return createdAt; }
+    public Instant getPreparedAt()     { return preparedAt; }
     public Instant getAssignedAt()     { return assignedAt; }
     public Instant getArrivedAt()      { return arrivedAt; }
     public Instant getDeliveredAt()    { return deliveredAt; }

@@ -1,29 +1,18 @@
 /**
- * WebSocketOrderStream
- *
- * Abre una conexión WebSocket a ws://localhost:8086/ws y llama a
- * onMessage(event) cada vez que llega un evento de pedido.
- *
- * El backend envía objetos con forma:
- *   { order_id, driver_id, state, last_updated }
- *
- * Principio SRP: solo gestiona la conexión WS, no toca React.
- * Principio OCP: se puede extender pasando distintos handlers sin modificar.
+ * WebSocketOrderStream — una sola conexión, reconexión con backoff.
+ * No abre una segunda conexión si ya hay una activa (OPEN o CONNECTING).
  */
 export default class WebSocketOrderStream {
-  #ws       = null;
-  #url      = null;
-  #onMsg    = null;
-  #onStatus = null;
-  #retries  = 0;
+  #ws         = null;
+  #url        = null;
+  #onMsg      = null;
+  #onStatus   = null;
+  #retries    = 0;
   #maxRetries = 5;
-  #retryDelay = 2000;  // ms, se duplica en cada intento
+  #baseDelay  = 2000;
+  #timer      = null;
+  #destroyed  = false;
 
-  /**
-   * @param {string}   url       URL del WebSocket (ws://localhost:8086/ws)
-   * @param {function} onMessage handler que recibe el objeto de evento ya parseado
-   * @param {function} onStatus  handler para estado: 'connecting' | 'open' | 'closed' | 'error'
-   */
   constructor(url, onMessage, onStatus = () => {}) {
     this.#url      = url;
     this.#onMsg    = onMessage;
@@ -31,6 +20,11 @@ export default class WebSocketOrderStream {
   }
 
   connect() {
+    if (this.#destroyed) return;
+    // Evitar conexión duplicada
+    if (this.#ws && (this.#ws.readyState === WebSocket.OPEN ||
+                     this.#ws.readyState === WebSocket.CONNECTING)) return;
+
     this.#onStatus('connecting');
     this.#ws = new WebSocket(this.#url);
 
@@ -39,27 +33,21 @@ export default class WebSocketOrderStream {
       this.#onStatus('open');
     };
 
-    this.#ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        this.#onMsg(data);
-      } catch {
-        // mensaje no JSON — ignorar
-      }
+    this.#ws.onmessage = (ev) => {
+      try { this.#onMsg(JSON.parse(ev.data)); } catch { /* ignorar no-JSON */ }
     };
 
-    this.#ws.onerror = () => {
-      this.#onStatus('error');
-    };
+    this.#ws.onerror = () => { this.#onStatus('error'); };
 
     this.#ws.onclose = () => {
       this.#onStatus('closed');
-      this.#scheduleReconnect();
+      if (!this.#destroyed) this.#scheduleReconnect();
     };
   }
 
   disconnect() {
-    this.#retries = this.#maxRetries; // evita reconexión
+    this.#destroyed = true;
+    clearTimeout(this.#timer);
     this.#ws?.close();
     this.#ws = null;
   }
@@ -67,7 +55,7 @@ export default class WebSocketOrderStream {
   #scheduleReconnect() {
     if (this.#retries >= this.#maxRetries) return;
     this.#retries++;
-    const delay = this.#retryDelay * this.#retries;
-    setTimeout(() => this.connect(), delay);
+    const delay = this.#baseDelay * this.#retries;
+    this.#timer = setTimeout(() => this.connect(), delay);
   }
 }

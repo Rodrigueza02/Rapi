@@ -1,33 +1,48 @@
 /**
- * orderStatus.js
- * Mapas de estados del backend → etiquetas y clases CSS.
- * El backend puede enviar ARRIVING o ON_THE_WAY — ambos se manejan.
- * No se modifica el backend; solo se amplía el mapeo en el frontend.
+ * orderStatus.js — mapeo completo de estados del backend.
+ * Ciclo: CREATED → PREPARED → ASSIGNED → ON_THE_WAY → ARRIVING → DELIVERED
+ * Terminal alternativo: CANCELLED
  */
 
 export const ORDER_STATUS = {
   CREATED:    'CREATED',
+  PREPARED:   'PREPARED',
   ASSIGNED:   'ASSIGNED',
+  ON_THE_WAY: 'ON_THE_WAY',
   ARRIVING:   'ARRIVING',
-  ON_THE_WAY: 'ON_THE_WAY',  /* alias que algunos eventos del backend usan */
   DELIVERED:  'DELIVERED',
   CANCELLED:  'CANCELLED',
 };
 
+/** Estados activos (no terminales) */
+export const ACTIVE_STATES = new Set([
+  'CREATED', 'PREPARED', 'ASSIGNED', 'ON_THE_WAY', 'ARRIVING',
+]);
+
 export const STATUS_LABEL = {
-  [ORDER_STATUS.CREATED]:    'Creado',
-  [ORDER_STATUS.ASSIGNED]:   'Asignado',
-  [ORDER_STATUS.ARRIVING]:   'En camino',
-  [ORDER_STATUS.ON_THE_WAY]: 'En camino',
-  [ORDER_STATUS.DELIVERED]:  'Entregado',
-  [ORDER_STATUS.CANCELLED]:  'Cancelado',
+  CREATED:    'Creado',
+  PREPARED:   'En preparación',
+  ASSIGNED:   'Asignado',
+  ON_THE_WAY: 'En camino',
+  ARRIVING:   'Llegando',
+  DELIVERED:  'Entregado',
+  CANCELLED:  'Cancelado',
 };
 
 export const STATUS_COLOR = {
-  [ORDER_STATUS.CREATED]:    'status--created',
-  [ORDER_STATUS.ASSIGNED]:   'status--assigned',
-  [ORDER_STATUS.ARRIVING]:   'status--arriving',
-  [ORDER_STATUS.ON_THE_WAY]: 'status--arriving',  /* mismo estilo naranja */
-  [ORDER_STATUS.DELIVERED]:  'status--delivered',
-  [ORDER_STATUS.CANCELLED]:  'status--cancelled',
+  CREATED:    'status--created',
+  PREPARED:   'status--prepared',
+  ASSIGNED:   'status--assigned',
+  ON_THE_WAY: 'status--on-the-way',
+  ARRIVING:   'status--arriving',
+  DELIVERED:  'status--delivered',
+  CANCELLED:  'status--cancelled',
 };
+
+/** Orden cronológico para tarjetas del dashboard */
+export const STATE_SEQUENCE = [
+  'CREATED', 'PREPARED', 'ASSIGNED', 'ON_THE_WAY', 'ARRIVING', 'DELIVERED',
+];
+
+/** Estados que NO permiten cancelación */
+export const NON_CANCELLABLE_STATES = new Set(['DELIVERED', 'CANCELLED', 'ON_THE_WAY', 'ARRIVING']);

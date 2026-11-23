@@ -13,13 +13,10 @@ import java.util.Map;
 
 /**
  * POST   /api/order      → crea pedido
- * DELETE /api/order/{id} → cancela pedido (solo CREATED o ASSIGNED)
+ * DELETE /api/order/{id} → cancela pedido (ADMIN, solo estados cancelables)
  *
- * Reglas de autorización en la creación de pedidos:
- *   ADMIN    → puede crear pedidos con cualquier customer_id
- *   CLIENTE  → solo puede crear pedidos con su propio customer_id
- *              (customer_id debe coincidir con el subject del JWT)
- *   Sin auth → rechazado por Spring Security antes de llegar aquí
+ * La cancelación real la ejecuta order-processor vía RabbitMQ.
+ * El 403 anterior se debía a que SecurityConfig no tenía regla para DELETE.
  */
 @RestController
 @RequestMapping("/api/order")
@@ -39,15 +36,11 @@ public class OrderController {
             @RequestBody CreateOrderRequest request,
             Authentication authentication) {
 
-        // La autenticación siempre existe aquí porque Spring Security
-        // exige ROLE_CLIENTE o ROLE_ADMIN antes de llegar a este método.
         boolean isAdmin = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .anyMatch("ROLE_ADMIN"::equals);
 
         if (!isAdmin) {
-            // Para CLIENTE: el customer_id debe coincidir con el
-            // identificador del usuario autenticado (subject del JWT).
             String authenticatedUserId = authentication.getName();
             if (!authenticatedUserId.equals(request.customerId())) {
                 return ResponseEntity
@@ -76,12 +69,19 @@ public class OrderController {
             return ResponseEntity.ok(Map.of(
                     "order_id", id,
                     "status",   "CANCELLED",
-                    "message",  "Order cancelled successfully"
+                    "message",  "Order cancellation sent"
             ));
-        } catch (IllegalArgumentException | IllegalStateException e) {
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (IllegalStateException e) {
+            String msg = e.getMessage() != null && e.getMessage().contains("DELIVERED")
+                    ? "Este pedido ya fue entregado y no puede cancelarse."
+                    : "No se puede cancelar: " + e.getMessage();
             return ResponseEntity
                     .status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", e.getMessage()));
+                    .body(Map.of("error", "UNPROCESSABLE_STATE", "message", msg));
         }
     }
 }

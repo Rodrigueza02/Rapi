@@ -1,9 +1,6 @@
 /**
- * AdminDashboard.jsx
- * SRP: única responsabilidad — orquestar estado de modales y datos del dashboard.
- * Toda la lógica de negocio vive en los hooks y componentes hijos.
+ * AdminDashboard.jsx — sin tarjetas simuladas, con ciclo cronológico real.
  */
-
 import { useCallback, useState } from 'react';
 import { Package } from 'lucide-react';
 
@@ -15,26 +12,20 @@ import CreateOrderModal   from '../../components/orders/CreateOrderModal.jsx';
 import CancelOrderModal   from '../../components/orders/CancelOrderModal.jsx';
 import RoundRobinWheel    from '../../components/dashboard/RoundRobinWheel.jsx';
 import RoundRobinNextCard from '../../components/dashboard/RoundRobinNextCard.jsx';
-import RequestsPanel      from '../../components/dashboard/RequestsPanel.jsx';
-import PaymentsPanel      from '../../components/dashboard/PaymentsPanel.jsx';
-import EmailsPanel        from '../../components/dashboard/EmailsPanel.jsx';
 
 import useOrders     from '../../hooks/useOrders.js';
 import useRoundRobin from '../../hooks/useRoundRobin.js';
 import useWebSocket  from '../../hooks/useWebSocket.js';
 
 export default function AdminDashboard() {
-  /* ── Estado de UI ─────────────────────────────────────────────────────── */
-  const [search,           setSearch]           = useState('');
-  const [detailOrderId,    setDetailOrderId]    = useState(null);
-  const [cancelOrderId,    setCancelOrderId]    = useState(null);
-  const [showCreateModal,  setShowCreateModal]  = useState(false);
+  const [search,          setSearch]          = useState('');
+  const [detailOrderId,   setDetailOrderId]   = useState(null);
+  const [cancelOrderId,   setCancelOrderId]   = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
-  /* ── Datos del backend ────────────────────────────────────────────────── */
   const { orders, loading, error, reload: reloadOrders } = useOrders();
   const { roundRobin, loading: rrLoading, reload: reloadRR } = useRoundRobin();
 
-  /* ── WebSocket: refresca tabla y rueda con cada evento real ───────────── */
   const onWsEvent = useCallback(() => {
     reloadOrders();
     reloadRR();
@@ -42,24 +33,20 @@ export default function AdminDashboard() {
 
   useWebSocket(onWsEvent);
 
-  /* ── Filtrado local ───────────────────────────────────────────────────── */
   const filtered = orders.filter(o =>
     !search ||
-    o.order_id.toLowerCase().includes(search.toLowerCase()) ||
-    o.driver_id?.toLowerCase().includes(search.toLowerCase())
+    o.order_id?.toLowerCase().includes(search.toLowerCase()) ||
+    o.driver_id?.toLowerCase().includes(search.toLowerCase()) ||
+    o.customer_id?.toLowerCase().includes(search.toLowerCase())
   );
-
-  /* ── Handlers ─────────────────────────────────────────────────────────── */
-  function handleOrderCreated() { reloadOrders(); }
-  function handleOrderCancelled() { reloadOrders(); }
 
   return (
     <div className="admin-dashboard">
 
-      {/* ── Métricas ─────────────────────────────────────────────────────── */}
+      {/* Métricas + tarjetas de estado */}
       <DashboardStats />
 
-      {/* ── Tabla de pedidos ─────────────────────────────────────────────── */}
+      {/* Tabla de pedidos */}
       <section className="dashboard-section">
         <div className="section-heading">
           <div className="section-title">
@@ -81,7 +68,7 @@ export default function AdminDashboard() {
         />
       </section>
 
-      {/* ── Round Robin + Solicitudes ─────────────────────────────────────── */}
+      {/* Round Robin */}
       <div className="dashboard-row">
         <section className="dashboard-section">
           <div className="section-heading">
@@ -98,43 +85,28 @@ export default function AdminDashboard() {
             <RoundRobinNextCard roundRobin={roundRobin} loading={rrLoading} />
           </div>
         </section>
-
-        <RequestsPanel
-          requests={[]}
-          onApprove={req => setCancelOrderId(req.orderId)}
-          onReject={() => {}}
-        />
       </div>
 
-      {/* ── Pagos + Correos ───────────────────────────────────────────────── */}
-      <div className="dashboard-row">
-        <PaymentsPanel stats={null} />
-        <EmailsPanel   stats={null} />
-      </div>
-
-      {/* ── Modales ───────────────────────────────────────────────────────── */}
+      {/* Modales */}
       {detailOrderId && (
         <OrderDetailModal
           orderId={detailOrderId}
           onClose={() => setDetailOrderId(null)}
         />
       )}
-
       {cancelOrderId && (
         <CancelOrderModal
           orderId={cancelOrderId}
           onClose={() => setCancelOrderId(null)}
-          onCancelled={handleOrderCancelled}
+          onCancelled={() => { reloadOrders(); setCancelOrderId(null); }}
         />
       )}
-
       {showCreateModal && (
         <CreateOrderModal
           onClose={() => setShowCreateModal(false)}
-          onCreated={handleOrderCreated}
+          onCreated={reloadOrders}
         />
       )}
-
     </div>
   );
 }

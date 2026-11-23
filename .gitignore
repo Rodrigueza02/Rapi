@@ -25,3 +25,6 @@ node_modules/
 *.dump
 *.sql.gz
 *.pgdump
+
+# Respaldos locales de base de datos
+backup_before_*.sql
