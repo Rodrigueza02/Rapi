@@ -1,8 +1,3 @@
-/**
- * sessionStorage.js
- * SRP: única responsabilidad — leer y borrar la sesión del navegador.
- */
-
 const STORAGE_KEY = 'deliveryflow_auth';
 
 export function readSession() {

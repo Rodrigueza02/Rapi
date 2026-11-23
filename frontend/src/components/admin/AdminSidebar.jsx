@@ -1,48 +1,101 @@
 import { NavLink } from 'react-router-dom';
+
 import {
-  LayoutDashboard, ShoppingBag, Bike,
-  CreditCard, Bell, MessageSquare,
-  BarChart3, Settings, LogOut, Truck,
+  Home,
+  ShoppingBag,
+  Bell,
+  Bike,
+  CreditCard,
+  Mail,
+  LogOut,
+  Truck,
 } from 'lucide-react';
 
+// Opciones del menú administrativo
 const NAV_LINKS = [
-  ['/admin',                'Resumen',        LayoutDashboard],
-  ['/admin/pedidos',        'Pedidos',        ShoppingBag],
-  ['/admin/repartidores',   'Repartidores',   Bike],
-  ['/admin/pagos',          'Pagos',          CreditCard],
-  ['/admin/notificaciones', 'Notificaciones', Bell],
-  ['/admin/reclamaciones',  'Reclamaciones',  MessageSquare],
-  ['/admin/reportes',       'Reportes',       BarChart3],
-  ['/admin/configuracion',  'Configuración',  Settings],
+  {
+    to: '/admin',
+    label: 'Inicio',
+    icon: Home,
+    end: true,
+  },
+  {
+    to: '/admin/pedidos',
+    label: 'Pedidos',
+    icon: ShoppingBag,
+  },
+  {
+    to: '/admin/solicitudes',
+    label: 'Solicitudes',
+    icon: Bell,
+  },
+  {
+    to: '/admin/repartidores',
+    label: 'Repartidores',
+    icon: Bike,
+  },
+  {
+    to: '/admin/pagos',
+    label: 'Pagos',
+    icon: CreditCard,
+  },
+  {
+    to: '/admin/correos',
+    label: 'Correos',
+    icon: Mail,
+  },
 ];
 
 export default function AdminSidebar({ onLogout }) {
   return (
     <aside className="sidebar">
+
+      {/* Logotipo de DeliveryFlow */}
       <div className="sidebar-brand">
         <Truck size={27} />
-        <span>Delivery<b>Flow</b></span>
+
+        <span>
+          Delivery<b>Flow</b>
+        </span>
       </div>
 
-      <p className="sidebar-label">MENÚ PRINCIPAL</p>
+      {/* Encabezado del menú */}
+      <p className="sidebar-label">
+        MENÚ PRINCIPAL
+      </p>
 
+      {/* Opciones de navegación */}
       <nav className="sidebar-nav">
-        {NAV_LINKS.map(([to, label, Icon]) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/admin'}
-            className={({ isActive }) => 'nav-item' + (isActive ? ' active' : '')}
-          >
-            <Icon size={19} />
-            {label}
-          </NavLink>
-        ))}
+        {NAV_LINKS.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end ?? false}
+              className={({ isActive }) =>
+                `nav-item${isActive ? ' active' : ''}`
+              }
+            >
+              <Icon size={19} />
+
+              <span>{item.label}</span>
+            </NavLink>
+          );
+        })}
       </nav>
 
-      <button className="logout" onClick={onLogout}>
-        <LogOut size={18} /> Cerrar sesión
+      {/* Cerrar sesión */}
+      <button
+        type="button"
+        className="logout"
+        onClick={onLogout}
+      >
+        <LogOut size={18} />
+        <span>Cerrar sesión</span>
       </button>
+
     </aside>
   );
 }

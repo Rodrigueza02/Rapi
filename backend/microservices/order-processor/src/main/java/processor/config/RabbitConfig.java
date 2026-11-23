@@ -18,6 +18,11 @@ public class RabbitConfig {
     }
 
     @Bean
+    public Queue cancelOrdersQueue() {
+        return QueueBuilder.durable(Names.CANCEL_ORDERS_QUEUE).build();
+    }
+
+    @Bean
     public MessageConverter jsonMessageConverter(ObjectMapper objectMapper) {
         return new Jackson2JsonMessageConverter(objectMapper);
     }
