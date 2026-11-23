@@ -23,6 +23,7 @@ services:
       POSTGRES_PASSWORD: ${RAPPI_DB_PASSWORD:-rappi_local_2026}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - internal
     healthcheck:
