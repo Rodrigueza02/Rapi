@@ -1,5 +1,5 @@
-import { NavLink } from 'react-router-dom';
 
+import { NavLink } from 'react-router-dom';
 import {
   Home,
   ShoppingBag,
@@ -9,7 +9,6 @@ import {
   Mail,
   LogOut,
 } from 'lucide-react';
-
 import { dashboardImages } from '../../data/dashboardImages.js';
 
 const NAV_LINKS = [
@@ -28,6 +27,7 @@ const NAV_LINKS = [
     to: '/admin/solicitudes',
     label: 'Solicitudes',
     icon: Bell,
+    badge: 3,
   },
   {
     to: '/admin/repartidores',
@@ -49,8 +49,6 @@ const NAV_LINKS = [
 export default function AdminSidebar({ onLogout }) {
   return (
     <aside className="sidebar">
-
-      {/* Logotipo de DeliveryFlow */}
       <div className="sidebar-brand">
         <img
           src={dashboardImages.logo}
@@ -59,10 +57,7 @@ export default function AdminSidebar({ onLogout }) {
         />
       </div>
 
-      {/* Encabezado del menú */}
-      <p className="sidebar-label">
-        MENÚ PRINCIPAL
-      </p>
+      <p className="sidebar-label">MENÚ PRINCIPAL</p>
 
       {/* Navegación administrativa */}
       <nav className="sidebar-nav">
@@ -80,6 +75,12 @@ export default function AdminSidebar({ onLogout }) {
             >
               <Icon size={19} />
               <span>{item.label}</span>
+
+              {item.badge && (
+                <span className="nav-badge">
+                  {item.badge}
+                </span>
+              )}
             </NavLink>
           );
         })}
@@ -106,7 +107,6 @@ export default function AdminSidebar({ onLogout }) {
         </button>
 
       </div>
-
     </aside>
   );
 }
