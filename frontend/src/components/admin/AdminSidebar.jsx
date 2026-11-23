@@ -8,10 +8,10 @@ import {
   CreditCard,
   Mail,
   LogOut,
-  Truck,
 } from 'lucide-react';
 
-// Opciones del menú administrativo
+import { dashboardImages } from '../../data/dashboardImages.js';
+
 const NAV_LINKS = [
   {
     to: '/admin',
@@ -52,11 +52,11 @@ export default function AdminSidebar({ onLogout }) {
 
       {/* Logotipo de DeliveryFlow */}
       <div className="sidebar-brand">
-        <Truck size={27} />
-
-        <span>
-          Delivery<b>Flow</b>
-        </span>
+        <img
+          src={dashboardImages.logo}
+          alt="DeliveryFlow"
+          className="sidebar-logo"
+        />
       </div>
 
       {/* Encabezado del menú */}
@@ -64,7 +64,7 @@ export default function AdminSidebar({ onLogout }) {
         MENÚ PRINCIPAL
       </p>
 
-      {/* Opciones de navegación */}
+      {/* Navegación administrativa */}
       <nav className="sidebar-nav">
         {NAV_LINKS.map((item) => {
           const Icon = item.icon;
@@ -79,22 +79,33 @@ export default function AdminSidebar({ onLogout }) {
               }
             >
               <Icon size={19} />
-
               <span>{item.label}</span>
             </NavLink>
           );
         })}
       </nav>
 
-      {/* Cerrar sesión */}
-      <button
-        type="button"
-        className="logout"
-        onClick={onLogout}
-      >
-        <LogOut size={18} />
-        <span>Cerrar sesión</span>
-      </button>
+      {/* Parte inferior del menú */}
+      <div className="sidebar-bottom">
+
+        {/* Imagen decorativa del repartidor */}
+        <img
+          src={dashboardImages.scooter}
+          alt="Repartidor de DeliveryFlow"
+          className="sidebar-illustration"
+        />
+
+        {/* Cerrar sesión */}
+        <button
+          type="button"
+          className="logout"
+          onClick={onLogout}
+        >
+          <LogOut size={18} />
+          <span>Cerrar sesión</span>
+        </button>
+
+      </div>
 
     </aside>
   );
