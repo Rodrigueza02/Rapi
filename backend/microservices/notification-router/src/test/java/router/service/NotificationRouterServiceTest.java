@@ -1,105 +1,120 @@
-
 package notificationrouter.service;
 
-import dtos.DriverAssignedEvent;
+import dtos.DriverArrivingEvent;
 import dtos.Names;
 import dtos.NotificationCommand;
-import dtos.OrderDeliveredEvent;
-import dtos.OrderEvent;
-
+import dtos.NotificationPayloadRecord;
 import notificationrouter.ports.NotificationCommandPort;
-import notificationrouter.strategy.ClientSmsStrategy;
-import notificationrouter.strategy.DriverPushStrategy;
 import notificationrouter.strategy.NotificationMappingStrategy;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
+/**
+ * Prueba la ORQUESTACIÓN del servicio con estrategias falsas (Mockito).
+ * Qué dice cada estrategia real se prueba en las pruebas de strategy/.
+ */
+@ExtendWith(MockitoExtension.class)
 class NotificationRouterServiceTest {
 
-    private NotificationCommandPort publisher;
+    private static final Instant NOW = Instant.parse("2026-11-21T10:00:00Z");
+
+    @Mock
+    private NotificationMappingStrategy firstStrategy;
+
+    @Mock
+    private NotificationMappingStrategy secondStrategy;
+
+    @Mock
+    private NotificationCommandPort notificationCommandPort;
+
     private NotificationRouterService service;
+
+    private final DriverArrivingEvent event =
+            new DriverArrivingEvent("order-1", "driver-1", "customer-1", NOW);
+
+    private final NotificationCommand command = NotificationCommand.of(
+            Names.ROUTING_CLIENT_SMS,
+            new NotificationPayloadRecord("order-1", "customer-1", "Your driver is arriving"));
 
     @BeforeEach
     void setUp() {
-
-        publisher = mock(NotificationCommandPort.class);
-
-        List<NotificationMappingStrategy> strategies =
-                List.of(
-                        new DriverPushStrategy(),
-                        new ClientSmsStrategy()
-                );
-
         service = new NotificationRouterService(
-                strategies,
-                publisher
-        );
+                List.of(firstStrategy, secondStrategy), notificationCommandPort);
     }
 
     @Test
-    void shouldPublishPushWhenDriverAssigned() {
+    void publishesTheCommandOfTheFirstStrategyThatSupportsTheEvent() {
+        // Arrange
+        when(firstStrategy.supports(event)).thenReturn(true);
+        when(firstStrategy.map(event)).thenReturn(Optional.of(command));
 
-        OrderEvent event = new DriverAssignedEvent(
-                "order-001",
-                "driver-001",
-                Instant.now()
-        );
-
+        // Act
         service.route(event);
 
-        ArgumentCaptor<NotificationCommand> captor =
-                ArgumentCaptor.forClass(NotificationCommand.class);
-
-        verify(publisher).publish(captor.capture());
-
-        NotificationCommand command = captor.getValue();
-
-        assertEquals(
-                Names.ROUTING_DRIVER_PUSH,
-                command.routingKey()
-        );
-
-        assertEquals(
-                "driver-001",
-                command.payload().recipientId()
-        );
-
-        assertEquals(
-                "order-001",
-                command.payload().orderId()
-        );
+        // Assert
+        verify(notificationCommandPort).publish(command);
+        verifyNoInteractions(secondStrategy);
     }
 
     @Test
-    void shouldNotPublishSmsWithoutCustomerId() {
+    void skipsStrategiesThatDoNotSupportTheEvent() {
+        // Arrange
+        when(firstStrategy.supports(event)).thenReturn(false);
+        when(secondStrategy.supports(event)).thenReturn(true);
+        when(secondStrategy.map(event)).thenReturn(Optional.of(command));
 
-        OrderEvent event = new OrderDeliveredEvent(
-                "order-002",
-                "driver-001",
-                Instant.now()
-        );
-
+        // Act
         service.route(event);
 
-        verifyNoInteractions(publisher);
+        // Assert
+        verify(firstStrategy, never()).map(any());
+        verify(notificationCommandPort).publish(command);
     }
 
     @Test
-    void shouldRejectNullEvent() {
+    void publishesNothingWhenTheStrategyReturnsNoCommand() {
+        // Arrange
+        when(firstStrategy.supports(event)).thenReturn(true);
+        when(firstStrategy.map(event)).thenReturn(Optional.empty());
 
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> service.route(null)
-        );
+        // Act
+        service.route(event);
 
-        verifyNoInteractions(publisher);
+        // Assert
+        verifyNoInteractions(notificationCommandPort);
+    }
+
+    @Test
+    void failsWhenNoStrategySupportsTheEvent() {
+        // Arrange
+        when(firstStrategy.supports(event)).thenReturn(false);
+        when(secondStrategy.supports(event)).thenReturn(false);
+
+        // Act + Assert
+        assertThatThrownBy(() -> service.route(event))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("DriverArrivingEvent");
+        verifyNoInteractions(notificationCommandPort);
+    }
+
+    @Test
+    void rejectsANullEvent() {
+        assertThatThrownBy(() -> service.route(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("required");
     }
 }

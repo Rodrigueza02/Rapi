@@ -1,5 +1,0 @@
-processor\strategy\DriverAssignmentStrategyTest.class
-processor\database\OrderMapperTest.class
-processor\state\OrderStateTest.class
-processor\model\OrderTest.class
-processor\service\ProcessOrderServiceTest.class

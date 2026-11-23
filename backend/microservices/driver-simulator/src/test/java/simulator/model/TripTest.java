@@ -10,7 +10,7 @@ class TripTest {
     @Test
     void startsEnRoute() {
         // Act
-        Trip trip = Trip.start("order-1", "driver-1");
+        Trip trip = Trip.start("order-1", "driver-1", "customer-1");
 
         // Assert
         assertThat(trip.phase()).isEqualTo(Trip.Phase.EN_ROUTE);
@@ -19,7 +19,7 @@ class TripTest {
     @Test
     void goesFromEnRouteToArrivingToDelivered() {
         // Arrange
-        Trip trip = Trip.start("order-1", "driver-1");
+        Trip trip = Trip.start("order-1", "driver-1", "customer-1");
 
         // Act + Assert
         trip.markArriving();
@@ -32,7 +32,7 @@ class TripTest {
     @Test
     void cannotBeDeliveredBeforeArriving() {
         // Arrange
-        Trip trip = Trip.start("order-1", "driver-1");
+        Trip trip = Trip.start("order-1", "driver-1", "customer-1");
 
         // Act + Assert
         assertThatThrownBy(trip::markDelivered)
@@ -43,7 +43,7 @@ class TripTest {
     @Test
     void cannotArriveTwice() {
         // Arrange
-        Trip trip = Trip.start("order-1", "driver-1");
+        Trip trip = Trip.start("order-1", "driver-1", "customer-1");
         trip.markArriving();
 
         // Act + Assert
@@ -53,11 +53,14 @@ class TripTest {
 
     @Test
     void rejectsBlankIds() {
-        assertThatThrownBy(() -> Trip.start(" ", "driver-1"))
+        assertThatThrownBy(() -> Trip.start(" ", "driver-1", "customer-1"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("orderId");
-        assertThatThrownBy(() -> Trip.start("order-1", null))
+        assertThatThrownBy(() -> Trip.start("order-1", null, "customer-1"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("driverId");
+        assertThatThrownBy(() -> Trip.start("order-1", "driver-1", " "))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("customerId");
     }
 }

@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TripTimingStrategyTest {
 
-    private final Trip trip = Trip.start("order-1", "driver-1");
+    private final Trip trip = Trip.start("order-1", "driver-1", "customer-1");
 
     @Test
     void fixedStrategyAlwaysReturnsTheConfiguredTimes() {

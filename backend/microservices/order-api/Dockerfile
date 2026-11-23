@@ -1,27 +1,23 @@
-
-FROM maven:3.9-eclipse-temurin-17 AS build
-
-WORKDIR /app
-
-COPY pom.xml ./pom.xml
-COPY dtos ./dtos
-COPY microservices/order-api ./microservices/order-api
-
-RUN mvn -B -pl microservices/order-api -am \
-    clean package -DskipTests
-
-FROM eclipse-temurin:17-jre
+﻿FROM maven:3.9.6-eclipse-temurin-17-alpine AS build
 
 WORKDIR /app
 
-RUN useradd --system --uid 10001 appuser
+# Copiar todos los modulos del proyecto Maven actual
+COPY . .
 
-COPY --from=build \
-    /app/microservices/order-api/target/*.jar \
-    app.jar
+# Compilar el microservicio y sus dependencias
+RUN mvn -B -pl microservices/order-api -am clean package -DskipTests
+
+FROM eclipse-temurin:17-jre-alpine
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
+
+COPY --from=build /app/microservices/order-api/target/order-api-1.0.0.jar /app/app.jar
+
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError"
 
 USER appuser
 
-EXPOSE 8081
-
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]

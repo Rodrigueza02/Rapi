@@ -78,8 +78,7 @@ class ProcessOrderServiceTest {
         assertThat(orderCaptor.getValue().statusName()).isEqualTo("ASSIGNED");
         assertThat(orderCaptor.getValue().assignment().orElseThrow().driverId()).isEqualTo("driver-7");
         assertThat(eventCaptor.getValue())
-                .isEqualTo(new DriverAssignedEvent("order-1", "driver-7", NOW));
-    }
+                .isEqualTo(new DriverAssignedEvent("order-1", "driver-7", "customer-1", NOW));    }
 
     @Test
     void redeliveredCommandRepublishesTheEventWithoutCreatingAnotherOrder() {
@@ -94,8 +93,7 @@ class ProcessOrderServiceTest {
         // Assert
         verify(orderRepository, never()).save(any(Order.class));
         verify(driverStrategy, never()).selectDriver(any(Order.class));
-        verify(eventPublisher).publish(new DriverAssignedEvent("order-1", "driver-3", NOW));
-    }
+        verify(eventPublisher).publish(new DriverAssignedEvent("order-1", "driver-3", "customer-1", NOW));    }
 
     @Test
     void doesNotPublishWhenPersistenceFails() {

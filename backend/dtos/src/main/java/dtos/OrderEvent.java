@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.time.Instant;
 
-
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "event_type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = DriverAssignedEvent.class, name = Names.EVENT_DRIVER_ASSIGNED),
@@ -18,6 +17,8 @@ public sealed interface OrderEvent
     String orderId();
 
     String driverId();
+
+    String customerId();
 
     Instant occurredAt();
 }
