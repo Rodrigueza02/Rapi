@@ -1,4 +1,16 @@
+# ============================================================
+# docker-compose.aws.yml — Override de producción AWS
+# Usar junto con docker-compose.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.aws.yml ...
+#
+# Variables de entorno requeridas en el servidor EC2 (nunca en git):
+#   RAPPI_JWT_SECRET, RAPPI_DB_PASSWORD, RAPPI_RABBIT_PASSWORD
+#   GMAIL_USER, GMAIL_APP_PASSWORD, EMAIL_SENDER, EMAIL_REPLY_TO
+# ============================================================
+
 services:
+
+  # ── Frontend con Nginx + TLS (Let's Encrypt) ─────────────
   frontend:
     build:
       context: ./frontend
@@ -17,3 +29,74 @@ services:
       - public
     restart: unless-stopped
     mem_limit: 256m
+
+  # ── auth-service ─────────────────────────────────────────
+  auth-service:
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/rappistream
+      DB_USER: rappi
+      DB_PASSWORD: ${RAPPI_DB_PASSWORD}
+      JWT_SECRET: ${RAPPI_JWT_SECRET}
+    restart: unless-stopped
+
+  # ── order-api ────────────────────────────────────────────
+  order-api:
+    environment:
+      JWT_SECRET: ${RAPPI_JWT_SECRET}
+      RABBITMQ_PASSWORD: ${RAPPI_RABBIT_PASSWORD}
+    restart: unless-stopped
+
+  # ── order-processor ──────────────────────────────────────
+  order-processor:
+    environment:
+      POSTGRES_PASSWORD: ${RAPPI_DB_PASSWORD}
+      RABBITMQ_PASSWORD: ${RAPPI_RABBIT_PASSWORD}
+    restart: unless-stopped
+
+  # ── dashboard-aggregator ─────────────────────────────────
+  dashboard-aggregator:
+    environment:
+      DB_PASSWORD: ${RAPPI_DB_PASSWORD}
+      JWT_SECRET: ${RAPPI_JWT_SECRET}
+      RABBITMQ_PASSWORD: ${RAPPI_RABBIT_PASSWORD}
+      EMAIL_SENDER: ${EMAIL_SENDER:-julirodriguezandrade@gmail.com}
+      EMAIL_REPLY_TO: ${EMAIL_REPLY_TO:-julirodriguezandrade@gmail.com}
+    restart: unless-stopped
+
+  # ── dashboard-backend ────────────────────────────────────
+  dashboard-backend:
+    restart: unless-stopped
+
+  # ── email-worker (perfil: email) ─────────────────────────
+  # Activar con: --profile email
+  email-worker:
+    profiles: [email]
+    environment:
+      DB_PASSWORD: ${RAPPI_DB_PASSWORD}
+      RABBITMQ_PASSWORD: ${RAPPI_RABBIT_PASSWORD}
+      GMAIL_USER: ${GMAIL_USER}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
+    restart: unless-stopped
+
+  # ── notification-router ──────────────────────────────────
+  notification-router:
+    environment:
+      RABBITMQ_PASSWORD: ${RAPPI_RABBIT_PASSWORD}
+    restart: unless-stopped
+
+  # ── sms-worker ───────────────────────────────────────────
+  sms-worker:
+    environment:
+      RABBITMQ_PASSWORD: ${RAPPI_RABBIT_PASSWORD}
+    restart: unless-stopped
+
+  # ── push-worker ──────────────────────────────────────────
+  push-worker:
+    environment:
+      RABBITMQ_PASSWORD: ${RAPPI_RABBIT_PASSWORD}
+    restart: unless-stopped
+
+  # ── driver-simulator (solo para demo — no activar en prod silencioso) ──
+  # Dejar comentado si no se requiere simulación en la presentación.
+  # driver-simulator:
+  #   restart: unless-stopped

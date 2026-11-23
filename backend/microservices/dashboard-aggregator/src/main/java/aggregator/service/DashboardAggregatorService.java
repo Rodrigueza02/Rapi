@@ -1,6 +1,7 @@
 package aggregator.service;
 
 import aggregator.dto.DashboardStatsDto;
+import aggregator.dto.DriverViewDto;
 import aggregator.dto.RoundRobinDto;
 import aggregator.model.OrderView;
 import aggregator.ports.DashboardBroadcastPort;
@@ -10,6 +11,7 @@ import dtos.DriverAssignedEvent;
 import dtos.OrderEvent;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -118,6 +120,59 @@ public class DashboardAggregatorService {
         String turnLabel  = (idx + 1) + " / " + drivers.size();
 
         return new RoundRobinDto(drivers, idx, nextDriver, turnLabel);
+    }
+
+    /**
+     * Construye la vista de cada repartidor conocido por el aggregator.
+     *
+     * El aggregator solo conoce repartidores que han recibido al menos un pedido
+     * desde que arrancó (driverRing). Para cada uno calcula:
+     *   - status: EN_RUTA si tiene un pedido ASSIGNED o ARRIVING; DESCONOCIDO si no.
+     *   - completedOrders: pedidos en estado DELIVERED.
+     *   - lastActivity: timestamp del evento más reciente.
+     *
+     * No inventa nombres, zonas ni calificaciones.
+     */
+    public List<DriverViewDto> getDrivers() {
+        List<OrderView> all = repository.findAll();
+        List<String> drivers = new ArrayList<>(driverRing);
+
+        return drivers.stream().map(driverId -> {
+
+            List<OrderView> mine = all.stream()
+                    .filter(o -> driverId.equals(o.getDriverId()))
+                    .toList();
+
+            // Pedido activo: ASSIGNED o ARRIVING
+            Optional<OrderView> active = mine.stream()
+                    .filter(o -> o.getState() == OrderViewState.ASSIGNED
+                              || o.getState() == OrderViewState.ARRIVING)
+                    .findFirst();
+
+            long completed = mine.stream()
+                    .filter(o -> o.getState() == OrderViewState.DELIVERED)
+                    .count();
+
+            // Última actividad: el evento más reciente de cualquier pedido
+            Optional<String> lastActivity = mine.stream()
+                    .max(Comparator.comparing(OrderView::getLastUpdated))
+                    .map(o -> o.getLastUpdated().toString());
+
+            String status          = active.isPresent() ? "EN_RUTA" : "DESCONOCIDO";
+            String activeOrderId   = active.map(OrderView::getOrderId).orElse(null);
+            String activeOrderState= active.map(o -> o.getState().name()).orElse(null);
+
+            return new DriverViewDto(
+                    driverId,
+                    status,
+                    activeOrderId,
+                    activeOrderState,
+                    completed,
+                    mine.size(),
+                    lastActivity.orElse(null)
+            );
+
+        }).toList();
     }
 
     // ── Privado ───────────────────────────────────────────────────────────────

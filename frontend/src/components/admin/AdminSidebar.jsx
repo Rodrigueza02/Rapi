@@ -3,9 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
   Home,
   ShoppingBag,
-  Bell,
   Bike,
-  CreditCard,
   Mail,
   LogOut,
 } from 'lucide-react';
@@ -24,20 +22,9 @@ const NAV_LINKS = [
     icon: ShoppingBag,
   },
   {
-    to: '/admin/solicitudes',
-    label: 'Solicitudes',
-    icon: Bell,
-    badge: 3,
-  },
-  {
     to: '/admin/repartidores',
     label: 'Repartidores',
     icon: Bike,
-  },
-  {
-    to: '/admin/pagos',
-    label: 'Pagos',
-    icon: CreditCard,
   },
   {
     to: '/admin/correos',

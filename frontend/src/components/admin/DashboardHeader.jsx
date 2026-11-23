@@ -1,3 +1,14 @@
+/**
+ * DashboardHeader.jsx
+ * Muestra el título, el indicador de conexión, campana y usuario.
+ *
+ * wsStatus refleja el estado real del WebSocket (desde AdminLayout).
+ * El indicador distingue tres situaciones:
+ *   - WebSocket activo ('open')      → tiempo real conectado
+ *   - WebSocket no conectado         → datos disponibles via REST
+ *   - Conectando ('connecting')      → intentando conectar
+ */
+
 import { Bell, ChevronDown } from 'lucide-react';
 import ConnectionIndicator from '../common/ConnectionIndicator.jsx';
 
@@ -7,20 +18,19 @@ export default function DashboardHeader({ title, subtitle, user, wsStatus = 'clo
   return (
     <header className="dashboard-header">
 
-      {/* ── Título ───────────────────────────────────────── */}
+      {/* ── Título ───────────────────────────────────────────── */}
       <div className="dashboard-header-left">
         <h1>{title}</h1>
         {subtitle && <p>{subtitle}</p>}
       </div>
 
-      {/* ── Controles derecha ─────────────────────────────── */}
+      {/* ── Controles derechos ────────────────────────────────── */}
       <div className="dashboard-header-right">
 
         <ConnectionIndicator status={wsStatus} />
 
         <button className="header-bell" aria-label="Notificaciones">
           <Bell size={18} />
-          <span className="header-bell-badge">3</span>
         </button>
 
         <button className="header-user" aria-label="Menú de usuario">

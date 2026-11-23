@@ -1,6 +1,13 @@
--- Seed: usuario administrador por defecto
--- Contraseña: admin123  (BCrypt strength 10)
--- Cambiar en producción.
+-- Seed: usuario administrador de referencia para entorno LOCAL / CI.
+-- EN PRODUCCIÓN (AWS): este script NO debe ejecutarse.
+--   El administrador real ya existe en la base de datos de producción.
+--   Protección: ON CONFLICT (email) DO NOTHING — no sobreescribe registros existentes.
+--
+-- Para aplicar manualmente en local:
+--   psql -U rappi -d rappistream -f 002_seed_admin.sql
+--
+-- Contraseña de referencia: admin123  (BCrypt strength 10)
+-- CAMBIAR en cualquier entorno real antes de exponer el servicio.
 
 INSERT INTO usuarios (id, nombre, email, password_hash, rol, activo)
 VALUES (

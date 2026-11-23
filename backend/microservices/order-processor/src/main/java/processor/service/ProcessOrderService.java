@@ -39,7 +39,7 @@ public class ProcessOrderService {
                 .orElseThrow(() -> new IllegalStateException(
                         "Order " + order.orderId() + " has no driver assigned"));
         eventPublisher.publish(new DriverAssignedEvent(
-                order.orderId(), assignment.driverId(), assignment.assignedAt()));
+                order.orderId(), assignment.driverId(), order.customerId(), assignment.assignedAt()));
     }
 
     /**
@@ -57,11 +57,22 @@ public class ProcessOrderService {
 
     private Order registerNewOrder(OrderCreatedCommand command) {
         Instant now   = clock.instant();
+        String itemsJson = command.items() == null || command.items().isEmpty() ? null
+                : convertItemsToJson(command.items());
         Order   order = Order.create(command.orderId(), command.customerId(),
-                command.deliveryAddress(), command.totalAmount(), now);
+                command.deliveryAddress(), command.totalAmount(), now, itemsJson);
         String driverId = driverStrategy.selectDriver(order);
         order.assignDriver(new DriverAssignment(driverId, now));
         orderRepository.save(order);
         return order;
+    }
+
+    private String convertItemsToJson(java.util.List<String> items) {
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper()
+                    .writeValueAsString(items);
+        } catch (Exception e) {
+            return String.join(",", items);
+        }
     }
 }

@@ -30,3 +30,8 @@ export async function fetchRoundRobin() {
   const res = await authorizedFetch('/api/dashboard/round-robin');
   return parseJson(res);
 }
+
+export async function fetchDrivers() {
+  const res = await authorizedFetch('/api/dashboard/drivers');
+  return parseJson(res);
+}

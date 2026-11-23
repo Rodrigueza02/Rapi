@@ -1,16 +1,78 @@
 /* layout.css — estructura general del dashboard y secciones */
 
-.admin-dashboard { display:flex; flex-direction:column; gap:24px; }
+/* ── Contenedor principal ─────────────────────────────────────── */
+.admin-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
 
-.dashboard-section { background:var(--card-bg); border:1px solid #F2E9E2; border-radius:18px; padding:22px 24px; }
+/* ── Sección tarjeta blanca ───────────────────────────────────── */
+.dashboard-section {
+  background: var(--card-bg);
+  border: 1px solid #F2E9E2;
+  border-radius: 18px;
+  padding: 22px 24px;
+}
 
-.dashboard-row { display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+/* ── Fila de dos columnas ─────────────────────────────────────── */
+.dashboard-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
 
-.section-heading { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:16px; flex-wrap:wrap; }
-.section-title   { display:flex; align-items:center; gap:10px; }
-.section-title h2 { font-size:17px; margin:0; }
-.section-title p  { font-size:12px; color:var(--text-muted); margin:2px 0 0; }
-.section-title svg { color:var(--orange); flex-shrink:0; }
-.rr-icon-title   { font-size:20px; }
+/* ── Encabezado de sección ────────────────────────────────────── */
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
 
-@media (max-width:1200px) { .dashboard-row { grid-template-columns:1fr; } }
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title h2 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+
+.section-title p {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 3px 0 0;
+}
+
+/* Icono en el título de sección */
+.section-title svg     { color: var(--orange); flex-shrink: 0; }
+.rr-icon-title         { font-size: 20px; line-height: 1; }
+
+/* ── Icono de sección con fondo naranja suave ─────────────────── */
+.section-icon-wrap {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: #FFF1E6;
+  display: grid;
+  place-items: center;
+  color: var(--orange);
+  flex-shrink: 0;
+}
+
+/* ── Responsive ───────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .dashboard-row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .admin-dashboard      { gap: 16px; }
+  .dashboard-section    { padding: 16px; }
+  .section-heading      { flex-direction: column; align-items: flex-start; }
+}

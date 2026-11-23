@@ -30,5 +30,6 @@
         <module>microservices/push-worker</module>
         <module>microservices/dashboard-aggregator</module>
         <module>microservices/dashboard-backend</module>
+        <module>microservices/email-worker</module>
     </modules>
 </project>

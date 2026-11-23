@@ -1,4 +1,3 @@
-
 spring:
   application:
     name: dashboard-aggregator
@@ -18,6 +17,12 @@ spring:
       ddl-auto: update
     show-sql: false
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
 server:
   port: 8085
 
@@ -30,3 +35,12 @@ dashboard:
   backend:
     websocket-url: ${DASHBOARD_BACKEND_WS_URL:ws://localhost:8086/ws/ingest}
 
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    issuer: rappi-stream-auth
+  email:
+    exchange: email_jobs
+    routing-key: email.send
+    sender: ${EMAIL_SENDER:julirodriguezandrade@gmail.com}
+    reply-to: ${EMAIL_REPLY_TO:julirodriguezandrade@gmail.com}

@@ -1,24 +1,383 @@
-/* panels.css — paneles inferiores: solicitudes, pagos, correos */
+/* panels.css — paneles inferiores: pagos, correos, solicitudes y RR next-card */
 
-.dashboard-panel { background:var(--card-bg); border:1px solid #F2E9E2; border-radius:18px; padding:22px 24px; display:flex; flex-direction:column; gap:14px; }
+/* ═══════════════════════════════════════════════════════════════
+   BASE PANEL
+   ═══════════════════════════════════════════════════════════════ */
+.dashboard-panel {
+  background: var(--card-bg);
+  border: 1px solid #F2E9E2;
+  border-radius: 18px;
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 
-.panel-header { display:flex; justify-content:space-between; align-items:center; gap:10px; }
-.panel-header h3 { display:flex; align-items:center; gap:8px; font-size:15px; font-weight:700; margin:0; }
-.panel-header h3 svg { color:var(--orange); }
-.panel-badge { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:#EF4444; color:#fff; font-size:10px; font-weight:800; }
-.panel-sub   { font-size:11px; color:var(--text-muted); }
+/* ── Encabezado compartido ────────────────────────────────────── */
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
 
-.panel-empty { display:flex; flex-direction:column; align-items:center; gap:8px; padding:28px 20px; text-align:center; color:var(--text-muted); font-size:13px; }
-.panel-empty-icon { font-size:32px; }
-.panel-empty p    { font-weight:600; }
-.panel-empty small { font-size:11px; }
+.panel-title-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
 
-.payments-total, .emails-total { display:block; font-size:36px; font-weight:800; letter-spacing:-1px; }
-.payments-breakdown, .emails-breakdown { list-style:none; display:flex; flex-direction:column; gap:10px; margin-top:12px; }
-.payments-breakdown li, .emails-breakdown li { display:flex; justify-content:space-between; align-items:center; font-size:13px; padding:8px 12px; border-radius:10px; background:#FAFAF9; }
+/* Icono de panel con fondo de color */
+.panel-icon-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.panel-icon--orange { background: #FFF1E6; color: var(--orange);  }
+.panel-icon--blue   { background: #EFF6FF; color: #3B82F6;        }
+.panel-icon--red    { background: #FEF2F2; color: #EF4444;        }
+.panel-icon--green  { background: #ECFDF5; color: #059669;        }
 
-.requests-list { display:flex; flex-direction:column; gap:12px; }
-.request-item  { border:1.5px solid #FFD5A8; border-radius:12px; padding:14px; background:#FFFAF5; }
-.request-info  { display:flex; flex-direction:column; gap:2px; font-size:13px; }
-.request-info em { color:var(--text-muted); font-style:italic; }
-.request-actions { display:flex; gap:10px; margin-top:12px; }
+.panel-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 1px;
+  color: var(--text);
+}
+.panel-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Badge contador */
+.panel-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background: #EF4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 0 5px;
+}
+
+/* Badge demostrativo */
+.demo-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #92400E;
+  background: #FEF3C7;
+  border: 1px solid #FDE68A;
+  padding: 3px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PAYMENTS PANEL & EMAILS PANEL (comparten estilos base)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Total principal + tendencia */
+.payments-total-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.payments-total {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: var(--text);
+  line-height: 1;
+}
+
+.payments-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.payments-trend.trend--up   { color: #059669; }
+.payments-trend.trend--down { color: #EF4444; }
+
+/* Desglose */
+.payments-breakdown {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.payments-breakdown li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #FAFAF9;
+  border: 1px solid #F2EDE8;
+}
+
+/* Icono de cada línea de desglose */
+.breakdown-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.breakdown-icon--green  { background: #D1FAE5; color: #059669; }
+.breakdown-icon--yellow { background: #FEF3C7; color: #D97706; }
+.breakdown-icon--red    { background: #FEE2E2; color: #EF4444; }
+.breakdown-icon--blue   { background: #DBEAFE; color: #3B82F6; }
+
+.breakdown-label {
+  flex: 1;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.breakdown-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   REQUESTS PANEL
+   ═══════════════════════════════════════════════════════════════ */
+.requests-panel { }
+
+/* Estado vacío */
+.requests-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-muted);
+}
+.requests-empty-icon { font-size: 32px; line-height: 1; }
+.requests-empty p    { font-size: 13px; font-weight: 600; margin: 0; }
+.requests-empty small { font-size: 11px; }
+
+/* Lista de tarjetas */
+.requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Tarjeta individual de solicitud */
+.request-card {
+  border: 1.5px solid #FFD5A8;
+  border-radius: 12px;
+  padding: 14px;
+  background: #FFFAF5;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.request-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.request-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #991B1B;
+  background: #FEE2E2;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+.request-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Info del cliente */
+.request-client {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.request-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFA347, #FB7828);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.request-client-name,
+.request-order-id {
+  font-size: 12px;
+  margin: 0;
+  color: var(--text);
+}
+.request-client-name strong,
+.request-order-id strong {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Motivo */
+.request-reason {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin: 0;
+  padding: 6px 10px;
+  background: #FFF8F2;
+  border-left: 3px solid #FFD5A8;
+  border-radius: 0 6px 6px 0;
+}
+
+/* Acciones */
+.request-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-approve,
+.btn-reject {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  border-radius: 10px;
+  border: 0;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn-approve { background: #059669; color: #fff; }
+.btn-reject  { background: #EF4444; color: #fff; }
+.btn-approve:hover,
+.btn-reject:hover { opacity: 0.88; }
+
+/* ═══════════════════════════════════════════════════════════════
+   ROUND ROBIN NEXT CARD
+   ═══════════════════════════════════════════════════════════════ */
+.rr-next-card {
+  flex: 1;
+  min-width: 200px;
+  background: #FFFAF5;
+  border: 1.5px solid #FFD5A8;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Estados de carga / vacío */
+.rr-next-card--loading,
+.rr-next-card--empty {
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  color: var(--text-muted);
+  gap: 10px;
+  text-align: center;
+}
+.rr-next-card--empty p     { font-size: 13px; font-weight: 600; margin: 6px 0 2px; }
+.rr-next-card--empty small { font-size: 11px; }
+.rr-next-empty-icon        { color: var(--orange); opacity: 0.5; }
+
+/* Encabezado de la tarjeta */
+.rr-next-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--orange);
+}
+
+/* Cuerpo: avatar + nombre */
+.rr-next-body {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.rr-next-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFA347, #FB7828);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(251, 120, 40, 0.35);
+  text-transform: uppercase;
+}
+
+.rr-next-info  { display: flex; flex-direction: column; gap: 2px; }
+.rr-next-label { font-size: 11px; color: var(--text-muted); margin: 0; }
+.rr-next-driver {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+/* Pie: turno */
+.rr-next-footer {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text-muted);
+  border-top: 1px solid #F2E9E2;
+  padding-top: 10px;
+}
+.rr-next-footer strong { color: var(--text); }
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .payments-total      { font-size: 26px; }
+  .rr-next-driver      { font-size: 18px; }
+  .rr-next-avatar      { width: 46px; height: 46px; font-size: 15px; }
+  .request-actions     { flex-direction: column; }
+}

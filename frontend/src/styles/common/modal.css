@@ -66,3 +66,109 @@
 .order-detail-row:last-child { border-bottom: 0; }
 .order-detail-row dt { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
 .order-detail-row dd { font-size: 13px; font-weight: 600; }
+
+/* ═══════════════════════════════════════════════════════════════
+   FORMULARIO NUEVO PEDIDO — validaciones y selector de productos
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Campo con label, hint y error */
+.create-order-field { display: flex; flex-direction: column; gap: 4px; }
+.create-order-label {
+  font-size: 12px; font-weight: 700;
+  color: var(--text); letter-spacing: .3px;
+}
+.create-order-hint  { font-size: 11px; color: var(--text-muted); }
+
+/* Input con borde rojo cuando hay error */
+.form-input--error {
+  border-color: #EF4444 !important;
+  box-shadow: 0 0 0 3px rgba(239,68,68,.12) !important;
+}
+
+/* Mensaje de error bajo el campo */
+.create-order-error {
+  font-size: 11px;
+  font-weight: 600;
+  color: #DC2626;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.create-order-error::before {
+  content: '⚠';
+  font-size: 11px;
+}
+
+/* ── Selector de productos ──────────────────────────────────── */
+.create-order-products {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.product-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: #FAFAFA;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: all .15s;
+}
+.product-chip:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+  background: #FFF5EE;
+}
+.product-chip--selected {
+  border-color: var(--orange);
+  background: var(--orange);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(245,130,50,.3);
+}
+.product-chip-check { font-size: 11px; }
+
+/* Texto de productos seleccionados */
+.create-order-selected-items {
+  font-size: 11px;
+  color: var(--orange);
+  font-weight: 600;
+  margin: 2px 0 0;
+}
+
+/* ── Campo de precio con prefijo y sufijo ───────────────────── */
+.create-order-price-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.create-order-price-prefix,
+.create-order-price-suffix {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.create-order-price-input { flex: 1; }
+
+/* ── Error de envío (nivel formulario) ─────────────────────── */
+.create-order-submit-error {
+  background: #FEF2F2;
+  border: 1.5px solid #FECACA;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #DC2626;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.create-order-submit-error::before { content: '⚠'; flex-shrink: 0; }

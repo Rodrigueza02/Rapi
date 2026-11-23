@@ -25,6 +25,11 @@ export default defineConfig(({ mode }) => {
           target: env.DASHBOARD_PROXY_TARGET || 'http://localhost:8085',
           changeOrigin: true,
         },
+
+        '/api/emails': {
+          target: env.DASHBOARD_PROXY_TARGET || 'http://localhost:8085',
+          changeOrigin: true,
+        },
       },
     },
 

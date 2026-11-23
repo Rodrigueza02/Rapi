@@ -20,3 +20,8 @@ node_modules/
 
 # Copias de seguridad locales
 *.bak
+
+# Dumps de base de datos — nunca versionar
+*.dump
+*.sql.gz
+*.pgdump

@@ -21,8 +21,12 @@ export default function RoundRobinWheel({ roundRobin }) {
     return (
       <div className="rr-empty">
         <span className="rr-empty-icon">🔄</span>
-        <p>Sin repartidores registrados aún.</p>
-        <small>Aparecerán cuando se procesen los primeros pedidos.</small>
+        <p>Anillo Round Robin sin datos</p>
+        <small>
+          El anillo se reconstruye en memoria cuando llegan nuevos pedidos
+          vía Kafka. Al reiniciar el servicio, el estado se pierde.
+          Crea un pedido nuevo para activar la asignación.
+        </small>
       </div>
     );
   }

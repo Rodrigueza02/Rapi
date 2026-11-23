@@ -1,6 +1,7 @@
 package aggregator.controller;
 
 import aggregator.dto.DashboardStatsDto;
+import aggregator.dto.DriverViewDto;
 import aggregator.dto.OrderViewDto;
 import aggregator.dto.RoundRobinDto;
 import aggregator.service.DashboardAggregatorService;
@@ -17,6 +18,7 @@ import java.util.Map;
  * GET /api/dashboard/orders/{id}     → detalle de un pedido
  * GET /api/dashboard/stats           → contadores para las 4 tarjetas
  * GET /api/dashboard/round-robin     → estado del anillo Round Robin
+ * GET /api/dashboard/drivers         → vista de cada repartidor conocido
  *
  * Puerto: 8085 (dashboard-aggregator)
  */
@@ -53,5 +55,10 @@ public class DashboardAggregatorController {
     @GetMapping("/round-robin")
     public RoundRobinDto roundRobin() {
         return service.getRoundRobin();
+    }
+
+    @GetMapping("/drivers")
+    public List<DriverViewDto> drivers() {
+        return service.getDrivers();
     }
 }

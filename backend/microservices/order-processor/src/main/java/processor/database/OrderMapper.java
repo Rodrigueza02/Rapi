@@ -23,7 +23,8 @@ final class OrderMapper {
                 order.createdAt(),
                 assignment.map(DriverAssignment::assignedAt).orElse(null),
                 order.arrivedAt().orElse(null),
-                order.deliveredAt().orElse(null));
+                order.deliveredAt().orElse(null),
+                order.itemsJson().orElse(null));
     }
 
     static Order toDomain(OrderEntity entity) {
@@ -31,15 +32,16 @@ final class OrderMapper {
                 ? null
                 : new DriverAssignment(entity.getDriverId(), entity.getAssignedAt());
 
-        return Order.restore(
+        Order order = Order.restore(
                 entity.getOrderId(),
                 entity.getCustomerId(),
                 entity.getDeliveryAddress(),
                 entity.getTotalAmount(),
                 entity.getCreatedAt(),
-                OrderState.fromName(entity.getStatus()),   // "ON_THE_WAY" -> objeto estado
+                OrderState.fromName(entity.getStatus()),
                 assignment,
                 entity.getArrivedAt(),
                 entity.getDeliveredAt());
+        return order;
     }
 }
