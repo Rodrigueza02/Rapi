@@ -178,12 +178,14 @@ jobs:
           set -e
           cd /home/ubuntu/rappi-stream
 
-          # Espera hasta que un curl en el host responda 200
+          # Espera hasta que un curl en el host responda 200.
+          # -L sigue redirecciones (ej: http://localhost/ → https://localhost/).
+          # -k omite verificación TLS solo para checks locales de infraestructura.
           wait_host() {
             local name=$1 url=$2
             echo "Esperando $name en $url ..."
             for i in $(seq 1 24); do
-              code=$(curl -s -o /dev/null -w "%{http_code}" "$url" || echo 0)
+              code=$(curl -k -L -s -o /dev/null -w "%{http_code}" "$url" || echo 0)
               if [ "$code" = "200" ]; then
                 echo "OK  $name responde (HTTP 200)"
                 return 0
