@@ -1,0 +1,48 @@
+name: Despliegue automatico AWS
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-aws
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Configurar SSH
+        env:
+          SSH_KEY: ${{ secrets.AWS_SSH_KEY }}
+          SSH_HOST: ${{ secrets.AWS_HOST }}
+          SSH_USER: ${{ secrets.AWS_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -t ed25519 "$SSH_HOST" > ~/.ssh/known_hosts
+          EXPECTED="SHA256:TSlPaViNUdePpWhSkDVjPBnz6+t7GWublvAEydlUCY8"
+          ACTUAL="$(ssh-keygen -lf ~/.ssh/known_hosts -E sha256 | awk '{print $2}')"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "ERROR: La identidad SSH de AWS no coincide"
+            exit 1
+          fi
+
+      - name: Desplegar en EC2
+        env:
+          SSH_HOST: ${{ secrets.AWS_HOST }}
+          SSH_USER: ${{ secrets.AWS_USER }}
+        run: |
+          ssh -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" 'bash -se' <<'REMOTE'
+          set -e
+          cd ~/rappi-stream
+
+          echo "===== CONEXION GITHUB ACTIONS CON AWS ====="
+          echo "Servidor conectado correctamente"
+          echo "===== VERSION ACTUAL ====="
+          git log -1 --oneline
+          echo "===== CONTENEDORES ====="
+          docker compose -f docker-compose.yml -f docker-compose.aws.yml ps
+          REMOTE
