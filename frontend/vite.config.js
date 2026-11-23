@@ -30,6 +30,14 @@ export default defineConfig(({ mode }) => {
           target: env.DASHBOARD_PROXY_TARGET || 'http://localhost:8085',
           changeOrigin: true,
         },
+
+        // Proxy WebSocket en desarrollo — Vite reenvía la conexión al dashboard-backend.
+        // En producción esta ruta la maneja Nginx (nginx.aws.conf).
+        '/ws': {
+          target: env.WS_PROXY_TARGET || 'http://localhost:8086',
+          changeOrigin: true,
+          ws: true,
+        },
       },
     },
 

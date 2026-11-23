@@ -13,8 +13,17 @@ export default function useWebSocket(onEvent) {
   const streamRef = useRef(null);
 
   useEffect(() => {
-    // En desarrollo el WS conecta directo al puerto 8086 (no pasa por el proxy de Vite)
-    const url    = import.meta.env.VITE_WS_URL ?? 'ws://localhost:8086/ws';
+    // En desarrollo: usa VITE_WS_URL si está definida, o conecta al puerto local.
+    // En producción (Nginx sobre HTTPS): deriva la URL del mismo dominio con wss://.
+    // Vite sustituye import.meta.env.* en tiempo de build; si la variable no está
+    // definida, se infiere del origen del navegador para no hardcodear localhost.
+    let url = import.meta.env.VITE_WS_URL;
+    if (!url) {
+      const proto  = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host   = window.location.host;          // ej: rappi-stream.duckdns.org
+      url = `${proto}//${host}/ws`;
+    }
+
     const stream = new WebSocketOrderStream(url, onEvent, setWsStatus);
     streamRef.current = stream;
     stream.connect();
