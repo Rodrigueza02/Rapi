@@ -14,7 +14,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.SequencedSet;
 
 public class DashboardAggregatorService {
 
@@ -26,7 +25,7 @@ public class DashboardAggregatorService {
      * Sirve como anillo Round Robin — el backend ya decidió la asignación;
      * aquí solo llevamos el índice para mostrárselo al frontend.
      */
-    private final SequencedSet<String> driverRing = new LinkedHashSet<>();
+    private final LinkedHashSet<String> driverRing = new LinkedHashSet<>();
     private int roundRobinIndex = 0;
 
     public DashboardAggregatorService(
