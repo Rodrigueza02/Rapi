@@ -1,5 +1,5 @@
-import { NavLink } from 'react-router-dom';
 
+import { NavLink } from 'react-router-dom';
 import {
   Home,
   ShoppingBag,
@@ -11,7 +11,6 @@ import {
   Truck,
 } from 'lucide-react';
 
-// Opciones del menú administrativo
 const NAV_LINKS = [
   {
     to: '/admin',
@@ -28,6 +27,7 @@ const NAV_LINKS = [
     to: '/admin/solicitudes',
     label: 'Solicitudes',
     icon: Bell,
+    badge: 3,
   },
   {
     to: '/admin/repartidores',
@@ -49,22 +49,15 @@ const NAV_LINKS = [
 export default function AdminSidebar({ onLogout }) {
   return (
     <aside className="sidebar">
-
-      {/* Logotipo de DeliveryFlow */}
       <div className="sidebar-brand">
         <Truck size={27} />
-
         <span>
           Delivery<b>Flow</b>
         </span>
       </div>
 
-      {/* Encabezado del menú */}
-      <p className="sidebar-label">
-        MENÚ PRINCIPAL
-      </p>
+      <p className="sidebar-label">MENÚ PRINCIPAL</p>
 
-      {/* Opciones de navegación */}
       <nav className="sidebar-nav">
         {NAV_LINKS.map((item) => {
           const Icon = item.icon;
@@ -79,23 +72,34 @@ export default function AdminSidebar({ onLogout }) {
               }
             >
               <Icon size={19} />
-
               <span>{item.label}</span>
+
+              {item.badge && (
+                <span className="nav-badge">
+                  {item.badge}
+                </span>
+              )}
             </NavLink>
           );
         })}
       </nav>
 
-      {/* Cerrar sesión */}
-      <button
-        type="button"
-        className="logout"
-        onClick={onLogout}
-      >
-        <LogOut size={18} />
-        <span>Cerrar sesión</span>
-      </button>
+      <div className="sidebar-bottom">
+        <img
+          src="/images/branding/repartidor-scooter.png"
+          alt="Repartidor de DeliveryFlow"
+          className="sidebar-illustration"
+        />
 
+        <button
+          type="button"
+          className="logout"
+          onClick={onLogout}
+        >
+          <LogOut size={18} />
+          <span>Cerrar sesión</span>
+        </button>
+      </div>
     </aside>
   );
 }
