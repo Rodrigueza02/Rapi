@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS usuarios (
+    id UUID PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    rol VARCHAR(20) NOT NULL DEFAULT 'CLIENTE',
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    fecha_creacion TIMESTAMP(6) WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT uk_usuarios_email UNIQUE (email),
+    CONSTRAINT ck_usuarios_rol
+        CHECK (rol IN ('ADMIN', 'CLIENTE', 'REPARTIDOR'))
+);

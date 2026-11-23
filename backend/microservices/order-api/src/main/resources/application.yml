@@ -27,3 +27,9 @@ logging:
   level:
     root: INFO
     orderapi: DEBUG
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    issuer: rappi-stream-auth
+

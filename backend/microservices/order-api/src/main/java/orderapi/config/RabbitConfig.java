@@ -15,6 +15,11 @@ public class RabbitConfig {
     }
 
     @Bean
+    public Queue cancelOrdersQueue() {
+        return new Queue(Names.CANCEL_ORDERS_QUEUE, true);
+    }
+
+    @Bean
     public Jackson2JsonMessageConverter jsonMessageConverter() {
         return new Jackson2JsonMessageConverter();
     }

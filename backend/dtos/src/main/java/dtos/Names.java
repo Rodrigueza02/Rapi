@@ -9,7 +9,8 @@ public final class Names {
     public static final String ORDER_EVENTS_TOPIC = "order_events";
 
     // ---------- RabbitMQ: cola de trabajo (comandos) ----------
-    public static final String NEW_ORDERS_QUEUE = "new_orders_queue";
+    public static final String NEW_ORDERS_QUEUE    = "new_orders_queue";
+    public static final String CANCEL_ORDERS_QUEUE = "cancel_orders_queue";
 
     // ---------- RabbitMQ: topic exchange (notificaciones) ----------
     public static final String NOTIFICATIONS_EXCHANGE = "notifications";

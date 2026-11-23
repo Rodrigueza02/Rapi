@@ -3,7 +3,6 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <!-- Spring Boot fija las versiones de todas las dependencias -->
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -11,28 +10,25 @@
         <version>3.5.0</version>
         <relativePath/>
     </parent>
-
     <groupId>com.rappistream</groupId>
     <artifactId>rappi-stream-backend</artifactId>
     <version>1.0.0</version>
     <packaging>pom</packaging>
     <name>rappi-stream-backend</name>
-
     <properties>
         <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-
-    <!-- Activa cada modulo quitando el comentario cuando su pom.xml ya este escrito -->
     <modules>
         <module>dtos</module>
-        <module>microservices/order-api</module> 
-        <module>microservices/order-processor</module> 
-        <module>microservices/driver-simulator</module> 
-        <module>microservices/notification-router</module> 
-        <module>microservices/sms-worker</module> 
-        <module>microservices/push-worker</module> 
-        <module>microservices/dashboard-aggregator</module> 
+        <module>microservices/auth-service</module>
+        <module>microservices/order-api</module>
+        <module>microservices/order-processor</module>
+        <module>microservices/driver-simulator</module>
+        <module>microservices/notification-router</module>
+        <module>microservices/sms-worker</module>
+        <module>microservices/push-worker</module>
+        <module>microservices/dashboard-aggregator</module>
         <module>microservices/dashboard-backend</module>
     </modules>
 </project>

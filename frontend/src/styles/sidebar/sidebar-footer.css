@@ -1,0 +1,13 @@
+.sidebar-bottom {
+  margin-top: auto;
+  padding-top: 30px;
+}
+
+.sidebar-illustration {
+  display: block;
+  width: 100%;
+  max-width: 235px;
+  height: auto;
+  margin: 0 auto;
+  object-fit: contain;
+}
