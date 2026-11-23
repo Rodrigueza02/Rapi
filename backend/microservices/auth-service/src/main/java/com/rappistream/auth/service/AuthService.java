@@ -54,10 +54,10 @@ public class AuthService {
                 || request.email() == null
                 || request.email().isBlank()
                 || request.password() == null
-                || request.password().length() < 12) {
+                || request.password().length() < 8) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Nombre, correo y contraseña de mínimo 12 caracteres son obligatorios"
+                    "Nombre, correo y contraseña de mínimo 8 caracteres son obligatorios"
             );
         }
 

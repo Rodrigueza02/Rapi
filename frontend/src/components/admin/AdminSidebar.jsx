@@ -8,8 +8,8 @@ import {
   CreditCard,
   Mail,
   LogOut,
-  Truck,
 } from 'lucide-react';
+import { dashboardImages } from '../../data/dashboardImages.js';
 
 const NAV_LINKS = [
   {
@@ -50,14 +50,16 @@ export default function AdminSidebar({ onLogout }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <Truck size={27} />
-        <span>
-          Delivery<b>Flow</b>
-        </span>
+        <img
+          src={dashboardImages.logo}
+          alt="DeliveryFlow"
+          className="sidebar-logo"
+        />
       </div>
 
       <p className="sidebar-label">MENÚ PRINCIPAL</p>
 
+      {/* Navegación administrativa */}
       <nav className="sidebar-nav">
         {NAV_LINKS.map((item) => {
           const Icon = item.icon;
@@ -84,13 +86,17 @@ export default function AdminSidebar({ onLogout }) {
         })}
       </nav>
 
+      {/* Parte inferior del menú */}
       <div className="sidebar-bottom">
+
+        {/* Imagen decorativa del repartidor */}
         <img
-          src="/images/branding/repartidor-scooter.png"
+          src={dashboardImages.scooter}
           alt="Repartidor de DeliveryFlow"
           className="sidebar-illustration"
         />
 
+        {/* Cerrar sesión */}
         <button
           type="button"
           className="logout"
@@ -99,6 +105,7 @@ export default function AdminSidebar({ onLogout }) {
           <LogOut size={18} />
           <span>Cerrar sesión</span>
         </button>
+
       </div>
     </aside>
   );
