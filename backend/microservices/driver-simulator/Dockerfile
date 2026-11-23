@@ -11,6 +11,7 @@ COPY microservices/sms-worker/pom.xml microservices/sms-worker/pom.xml
 COPY microservices/push-worker/pom.xml microservices/push-worker/pom.xml
 COPY microservices/dashboard-aggregator/pom.xml microservices/dashboard-aggregator/pom.xml
 COPY microservices/dashboard-backend/pom.xml microservices/dashboard-backend/pom.xml
+COPY microservices/auth-service/pom.xml microservices/auth-service/pom.xml
 
 RUN mvn -B dependency:go-offline -pl microservices/driver-simulator -am || true
 
