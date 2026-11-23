@@ -81,6 +81,10 @@ public final class Order {
         this.deliveredAt = at;
     }
 
+    public void cancel() {
+        this.state = state.cancel();
+    }
+
 
     public String orderId() {
         return orderId;

@@ -1,0 +1,25 @@
+server:
+  port: ${SERVER_PORT:8087}
+
+spring:
+  application:
+    name: auth-service
+
+# ── Usuario administrador fijo ────────────────────────────────────────────────
+# Cambia estos valores según necesites; nunca pongas credenciales reales en git.
+app:
+  admin:
+    email:    ${ADMIN_EMAIL:admin@deliveryflow.com}
+    password: ${ADMIN_PASSWORD:admin123}
+    name:     ${ADMIN_NAME:Administrador}
+
+# ── JWT ───────────────────────────────────────────────────────────────────────
+# secret: cadena Base64 de al menos 256 bits (32 bytes).
+# Genera una con:  openssl rand -base64 32
+  jwt:
+    secret:     ${JWT_SECRET:bXlTdXBlclNlY3JldEtleUZvckRlbGl2ZXJ5Rmxvdzk4NzY=}
+    expires-in: ${JWT_EXPIRES_IN:3600}   # segundos
+
+logging:
+  level:
+    auth: DEBUG
