@@ -1,24 +1,61 @@
-name: Verificar AWS Rappi-Stream
+name: Desplegar Rappi-Stream AWS
 
 on:
+  push:
+    branches:
+      - dev
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: rappi-aws-production
+  cancel-in-progress: false
+
 jobs:
-  verificar-aws:
+  deploy:
     runs-on: [self-hosted, Linux, X64, rappi-production]
-    timeout-minutes: 5
+    timeout-minutes: 20
 
     steps:
-      - name: Verificar runner
+      - name: Verificar rama y cambios
         run: |
-          echo "Runner conectado correctamente"
-          hostname
-          whoami
-
-      - name: Verificar contenedores
-        run: |
+          set -e
           cd /home/ubuntu/rappi-stream
-          docker compose -f docker-compose.yml -f docker-compose.aws.yml ps
+          test "$(git branch --show-current)" = "dev"
+          test -z "$(git status --porcelain)"
+          git fetch origin dev
+
+      - name: Actualizar codigo
+        run: |
+          set -e
+          cd /home/ubuntu/rappi-stream
+          git merge --ff-only origin/dev
+
+      - name: Construir frontend
+        run: |
+          set -e
+          cd /home/ubuntu/rappi-stream
+          docker compose -f docker-compose.yml \
+            -f docker-compose.aws.yml \
+            -p rappi-stream-actual \
+            build frontend
+
+      - name: Publicar frontend
+        run: |
+          set -e
+          cd /home/ubuntu/rappi-stream
+          docker compose -f docker-compose.yml \
+            -f docker-compose.aws.yml \
+            -p rappi-stream-actual \
+            up -d --no-deps frontend
+
+      - name: Verificar frontend
+        run: |
+          set -e
+          cd /home/ubuntu/rappi-stream
+          docker compose -f docker-compose.yml \
+            -f docker-compose.aws.yml \
+            -p rappi-stream-actual \
+            ps frontend
