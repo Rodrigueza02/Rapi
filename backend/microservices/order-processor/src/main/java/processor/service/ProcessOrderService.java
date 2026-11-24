@@ -122,7 +122,11 @@ public class ProcessOrderService {
         // 1. Persistir en CREATED y publicar evento inmediatamente
         orderRepository.save(order);
         eventPublisher.publish(new OrderCreatedEvent(
-                order.orderId(), null, order.customerId(), now));
+                order.orderId(), null, order.customerId(),
+                order.deliveryAddress(),
+                command.items(),
+                order.totalAmount(),
+                now));
         log.info("ORDER_CREATED: orderId={}", order.orderId());
 
         // 2. Después de prepareDelay → PREPARED

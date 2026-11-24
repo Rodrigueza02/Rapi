@@ -82,13 +82,20 @@ public class WebSocketBroadcaster
 
         Map<String, Object> message = new LinkedHashMap<>();
 
-        message.put("order_id", view.getOrderId());
-        message.put("driver_id", view.getDriverId());
-        message.put("state", view.getState().name());
-        message.put(
-                "last_updated",
-                view.getLastUpdated().toString()
-        );
+        message.put("order_id",   view.getOrderId());
+        message.put("driver_id",  view.getDriverId());
+        message.put("customer_id", view.getCustomerId());
+        message.put("state",      view.getState().name());
+        message.put("last_updated", view.getLastUpdated().toString());
+
+        // Incluir campos de dirección, productos y total cuando estén disponibles,
+        // para que el frontend pueda actualizar la tabla sin un fetch REST adicional.
+        if (view.getDeliveryAddress() != null)
+            message.put("delivery_address", view.getDeliveryAddress());
+        if (view.getTotalAmount() != null)
+            message.put("total_amount", view.getTotalAmount());
+        if (view.getItemsJson() != null)
+            message.put("items_json", view.getItemsJson());
 
         try {
             return objectMapper.writeValueAsString(message);

@@ -16,7 +16,7 @@ import static org.mockito.Mockito.*;
 
 class OrderHistoryRepositoryAdapterTest {
 
-    private OrderHistoryJpaRepository jpaRepository;
+    private OrderHistoryJpaRepository     jpaRepository;
     private OrderHistoryRepositoryAdapter adapter;
 
     private final Instant start = Instant.parse("2026-01-01T10:00:00Z");
@@ -24,9 +24,13 @@ class OrderHistoryRepositoryAdapterTest {
     @BeforeEach
     void setUp() {
         jpaRepository = mock(OrderHistoryJpaRepository.class);
-        // Stub para idempotencia: findTop devuelve vacío por defecto
+
         when(jpaRepository.findTopByOrderIdOrderBySequenceNumDesc(any()))
                 .thenReturn(Optional.empty());
+        when(jpaRepository.findAllByOrderByOrderIdAscSequenceNumAscOccurredAtAsc())
+                .thenReturn(List.of());
+
+        // Constructor ya no necesita DashboardAggregatorService
         adapter = new OrderHistoryRepositoryAdapter(jpaRepository);
     }
 
@@ -45,7 +49,6 @@ class OrderHistoryRepositoryAdapterTest {
 
     @Test
     void loadHistory_reconstructsCurrentStateFromEvents() {
-        // Dos eventos para el mismo pedido: ASSIGNED → DELIVERED
         OrderView assigned = OrderView.from(
                 new DriverAssignedEvent("order-1", "driver-1", "customer-1", start));
         OrderView delivered = OrderView.restoreFull(
@@ -60,8 +63,16 @@ class OrderHistoryRepositoryAdapterTest {
 
         adapter.loadHistory();
 
+        // El adaptador ya no llama al servicio — expone el conteo para que BeanConfig lo use
+        assertEquals(1, adapter.countAssignedEvents());
+
         OrderView recovered = adapter.findById("order-1").orElseThrow();
         assertEquals(OrderViewState.DELIVERED, recovered.getState());
+    }
+
+    @Test
+    void countAssignedEvents_returnsZeroWhenNoHistory() {
+        assertEquals(0, adapter.countAssignedEvents());
     }
 
     @Test
@@ -74,18 +85,13 @@ class OrderHistoryRepositoryAdapterTest {
         OrderView view = OrderView.from(
                 new DriverAssignedEvent("order-1", "driver-1", "customer-1", start));
 
-        // Simular que ya existe un evento con el mismo estado y timestamp
         OrderHistoryEntity existing =
                 OrderHistoryEntity.from(view, Names.EVENT_DRIVER_ASSIGNED, 0);
         when(jpaRepository.findTopByOrderIdOrderBySequenceNumDesc("order-1"))
                 .thenReturn(Optional.of(existing));
 
-        // Intentar guardar el mismo estado de nuevo
         adapter.save(view, Names.EVENT_DRIVER_ASSIGNED);
 
-        // No debe insertarse de nuevo (el adaptador detecta duplicado por seq-1)
-        // Primera llamada ya registra seq=0, el stub devuelve seq=0 que es seq-1=0-1=-1 ≠ 0
-        // → no es duplicado en este escenario, solo verifica que el flujo no lanza
         verify(jpaRepository, atMostOnce()).saveAndFlush(any());
     }
 }

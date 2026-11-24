@@ -35,7 +35,11 @@ dashboard:
   backend:
     websocket-url: ${DASHBOARD_BACKEND_WS_URL:ws://localhost:8086/ws/ingest}
 
+order-processor:
+  driver-ring-url: ${ORDER_PROCESSOR_DRIVER_RING_URL:http://localhost:8083/internal/driver-ring}
+
 app:
+  drivers: driver-1,driver-2,driver-3,driver-4
   jwt:
     secret: ${JWT_SECRET}
     issuer: rappi-stream-auth

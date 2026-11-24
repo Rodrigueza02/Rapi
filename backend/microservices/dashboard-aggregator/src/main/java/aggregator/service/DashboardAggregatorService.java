@@ -17,19 +17,66 @@ import java.util.*;
  * <p>Recibe eventos de dominio desde Kafka, actualiza la proyección en memoria
  * y delega al repositorio la persistencia append-only en el Event Store.
  * Cada evento se persiste con su {@code event_type} canónico.
+ *
+ * <h3>Round Robin</h3>
+ * <p>El anillo de repartidores ({@code driverRing}) se inicializa con la lista
+ * estática configurada en {@code app.drivers} — igual que el order-processor —
+ * de modo que los repartidores aparecen desde el arranque, antes del primer pedido.
+ *
+ * <p>El índice {@code roundRobinIndex} se sincroniza al reconstruir el historial
+ * en {@link #seedRoundRobinFromHistory(int)}: cuenta cuántos eventos
+ * DRIVER_ASSIGNED existen en la base de datos y recalcula el índice, manteniendo
+ * la coherencia con el order-processor tras un reinicio.
  */
 public class DashboardAggregatorService {
 
     private final OrderViewRepositoryPort repository;
     private final DashboardBroadcastPort  broadcaster;
 
-    private final LinkedHashSet<String> driverRing  = new LinkedHashSet<>();
+    /** Anillo de repartidores. Preserva el orden de inserción. */
+    private final LinkedHashSet<String> driverRing;
+
+    /** Índice del próximo turno (apunta al repartidor que recibirá el siguiente pedido). */
     private int roundRobinIndex = 0;
 
+    /**
+     * @param repository  puerto de persistencia
+     * @param broadcaster puerto de difusión WebSocket
+     * @param knownDrivers lista ordenada de repartidores configurados en {@code app.drivers}.
+     *                     Si está vacía se aceptan igualmente; los conductores se agregarán
+     *                     dinámicamente cuando lleguen eventos DRIVER_ASSIGNED.
+     */
     public DashboardAggregatorService(OrderViewRepositoryPort repository,
-                                      DashboardBroadcastPort broadcaster) {
+                                      DashboardBroadcastPort broadcaster,
+                                      List<String> knownDrivers) {
         this.repository  = Objects.requireNonNull(repository,  "repository");
         this.broadcaster = Objects.requireNonNull(broadcaster, "broadcaster");
+        this.driverRing  = new LinkedHashSet<>(
+                knownDrivers != null ? knownDrivers : Collections.emptyList());
+    }
+
+    /**
+     * Inicializa el índice directamente con el valor real leído del order-processor.
+     * Garantiza sincronía exacta incluso después de reinicios.
+     *
+     * @param index índice actual del {@code AtomicInteger} del order-processor (0-based)
+     */
+    public void seedRoundRobinFromIndex(int index) {
+        if (!driverRing.isEmpty()) {
+            roundRobinIndex = Math.floorMod(index, driverRing.size());
+        }
+    }
+
+    /**
+     * Fallback: recalcula el índice a partir del número de eventos DRIVER_ASSIGNED
+     * históricos cuando el order-processor no está disponible al arrancar.
+     *
+     * @param assignedEventsCount número total de eventos DRIVER_ASSIGNED en el Event Store
+     */
+    public void seedRoundRobinFromHistory(int assignedEventsCount) {
+        if (!driverRing.isEmpty() && assignedEventsCount > 0) {
+            roundRobinIndex = assignedEventsCount % driverRing.size();
+        }
     }
 
     /**
@@ -59,12 +106,15 @@ public class DashboardAggregatorService {
         }
 
         OrderView view = existing.get();
+
+        boolean changed = view.apply(event);
+        if (!changed) return;  // evento duplicado → no avanzar nada
+
+        // Solo registrar el conductor y avanzar el índice cuando el evento
+        // es nuevo y fue aplicado correctamente.
         if (event instanceof DriverAssignedEvent assigned) {
             trackDriver(assigned.driverId());
         }
-
-        boolean changed = view.apply(event);
-        if (!changed) return;
 
         repository.save(view, eventType);
         broadcaster.broadcast(view);
@@ -129,9 +179,16 @@ public class DashboardAggregatorService {
         return event.getClass().getSimpleName().toUpperCase();
     }
 
+    /**
+     * Registra al repartidor en el anillo y avanza el índice.
+     * El repartidor que acaba de recibir un pedido es el que estaba en {@code roundRobinIndex},
+     * así que después del evento avanzamos al siguiente.
+     */
     private void trackDriver(String driverId) {
         driverRing.add(driverId);
-        if (!driverRing.isEmpty())
+        // Solo avanzamos si el anillo tiene conductores (siempre true aquí)
+        if (!driverRing.isEmpty()) {
             roundRobinIndex = (roundRobinIndex + 1) % driverRing.size();
+        }
     }
 }

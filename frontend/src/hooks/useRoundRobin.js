@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { fetchRoundRobin } from '../api/HttpDashboardApi.js';
 
 /**
  * Obtiene el estado del anillo Round Robin del backend.
- * Refresca cada vez que el componente se monta o se llama a `reload`.
+ *
+ * `reload` es estable (useCallback con deps vacías) para que los
+ * componentes llamadores puedan incluirla en sus propios useCallback
+ * sin provocar re-renders en cadena.
  *
  * @returns {{ roundRobin, loading, error, reload }}
  */
@@ -12,7 +15,7 @@ export default function useRoundRobin() {
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const data = await fetchRoundRobin();
@@ -23,9 +26,9 @@ export default function useRoundRobin() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []); // sin dependencias externas: fetchRoundRobin es un módulo estable
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   return { roundRobin, loading, error, reload: load };
 }

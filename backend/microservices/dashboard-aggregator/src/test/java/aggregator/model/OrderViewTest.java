@@ -16,7 +16,7 @@ class OrderViewTest {
 
     @Test
     void from_createdEvent_setsCreatedState() {
-        OrderView view = OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", T0));
+        OrderView view = OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", null, null, null, T0));
         assertEquals("o-1",                    view.getOrderId());
         assertNull(view.getDriverId());
         assertEquals(OrderViewState.CREATED,   view.getState());
@@ -33,7 +33,7 @@ class OrderViewTest {
 
     @Test
     void fullCycle_sixTransitions() {
-        OrderView view = OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", T0));
+        OrderView view = OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", null, null, null, T0));
 
         assertTrue(view.apply(new OrderPreparedEvent("o-1",  null,  "c-1", T0.plusSeconds(4))));
         assertEquals(OrderViewState.PREPARED,   view.getState());
@@ -55,7 +55,7 @@ class OrderViewTest {
 
     @Test
     void duplicateEvent_returnsFalse() {
-        OrderView view = OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", T0));
+        OrderView view = OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", null, null, null, T0));
         view.apply(new OrderPreparedEvent("o-1", null, "c-1", T0.plusSeconds(4)));
         view.apply(new DriverAssignedEvent("o-1", "d-1", "c-1", T0.plusSeconds(8)));
 
@@ -79,7 +79,7 @@ class OrderViewTest {
 
     @Test
     void skippingArrivingToDelivered_invalid() {
-        OrderView view = OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", T0));
+        OrderView view = OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", null, null, null, T0));
         view.apply(new OrderPreparedEvent("o-1",  null,  "c-1", T0.plusSeconds(4)));
         view.apply(new DriverAssignedEvent("o-1", "d-1", "c-1", T0.plusSeconds(8)));
         view.apply(new OrderOnTheWayEvent("o-1",  "d-1", "c-1", T0.plusSeconds(12)));

@@ -1,21 +1,28 @@
 /**
  * AdminLayout.jsx
- * Gestiona el estado del WebSocket y lo propaga al DashboardHeader.
  *
- * El hook useWebSocket abre UNA conexión ws://localhost:8086/ws y devuelve
- * el estado real de la conexión. El layout lo pasa al header para que
- * el indicador refleje la situación real (no siempre 'closed').
+ * Shell del panel administrativo: sidebar + header + área de contenido (Outlet).
  *
- * Las páginas hijas (AdminDashboard, PedidosPage) tienen sus propias
- * llamadas a useWebSocket para el reload de datos — eso no cambia.
+ * CONEXIÓN WEBSOCKET
+ * ------------------
+ * Esta versión NO abre su propio WebSocket. Anteriormente abría una segunda
+ * conexión (useWebSocket con callback noop) solo para mostrar el indicador de
+ * estado en el header, lo que creaba una conexión duplicada innecesaria.
+ *
+ * El estado real del WebSocket lo gestiona cada página hija (AdminDashboard,
+ * RepartidoresPage, etc.) a través de su propio useWebSocket. Para que el
+ * header refleje ese estado, las páginas hijas lo comunican al layout mediante
+ * el contexto de React Router (setWsStatus a través de useOutletContext).
+ *
+ * Si la página activa no reporta estado, el header muestra 'unknown'
+ * (indicador neutro, sin color de error).
  */
 
-import { useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
 import AdminSidebar    from '../components/admin/AdminSidebar.jsx';
 import DashboardHeader from '../components/admin/DashboardHeader.jsx';
-import useWebSocket    from '../hooks/useWebSocket.js';
 
 const MODULES = {
   pedidos: {
@@ -43,14 +50,16 @@ const MODULES = {
 export default function AdminLayout({ session, onLogout }) {
   const location = useLocation();
 
-  /* ── Estado real del WebSocket ────────────────────────────────
-     Esta instancia solo sirve para actualizar el indicador de
-     conexión en el header. No dispara reloads de datos —
-     cada página hijo tiene su propio useWebSocket para eso.       */
-  const noop = useCallback(() => {}, []);
-  const { wsStatus } = useWebSocket(noop);
+  /* ── Estado del WebSocket: lo publican las páginas hijas ──────────────────
+     Inicialmente 'unknown' (indicador neutro). AdminDashboard y otras páginas
+     llaman setWsStatus (recibido por useOutletContext) cuando su useWebSocket
+     cambia de estado, así el header siempre refleja la conexión real activa.  */
+  const [wsStatus, setWsStatus] = useState('unknown');
 
-  /* ── Título y subtítulo según la ruta ─────────────────────── */
+  /* ── Estabilizar setWsStatus para que el Outlet context no cause re-renders */
+  const reportWsStatus = useCallback((status) => setWsStatus(status), []);
+
+  /* ── Título y subtítulo según la ruta ──────────────────────────────────── */
   const moduleKey     = location.pathname.split('/')[2];
   const currentModule = MODULES[moduleKey];
   const title    = currentModule ? currentModule.title    : 'Panel Administrativo';
@@ -67,7 +76,8 @@ export default function AdminLayout({ session, onLogout }) {
           user={session}
           wsStatus={wsStatus}
         />
-        <Outlet />
+        {/* Las páginas hijas reciben reportWsStatus para actualizar el indicador */}
+        <Outlet context={{ reportWsStatus }} />
       </main>
     </div>
   );

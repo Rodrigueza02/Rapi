@@ -10,7 +10,7 @@ import { fetchStats } from '../api/HttpDashboardApi.js';
  * @param {number} intervalMs  intervalo de refresco automático (ms)
  * @returns {{ stats, loading, error, reload }}
  */
-export default function useDashboardStats(intervalMs = 15_000) {
+export default function useDashboardStats(intervalMs = 10_000) {
   const [stats,   setStats]   = useState(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(null);

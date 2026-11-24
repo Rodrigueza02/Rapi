@@ -33,7 +33,17 @@ public class OrderView {
 
     public static OrderView from(OrderCreatedEvent e) {
         Objects.requireNonNull(e);
-        return new OrderView(e.orderId(), e.customerId(), null, null, null,
+        String itemsJson = null;
+        if (e.items() != null && !e.items().isEmpty()) {
+            try {
+                itemsJson = new com.fasterxml.jackson.databind.ObjectMapper()
+                        .writeValueAsString(e.items());
+            } catch (Exception ex) {
+                itemsJson = String.join(",", e.items());
+            }
+        }
+        return new OrderView(e.orderId(), e.customerId(),
+                e.deliveryAddress(), e.totalAmount(), itemsJson,
                 null, OrderViewState.CREATED, e.occurredAt());
     }
 

@@ -26,6 +26,12 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>Idempotencia: si ya existe un evento con el mismo {@code sequence_num}
  * para el mismo pedido, se omite la inserción.
+ *
+ * <p><strong>Sin dependencia circular:</strong> este adaptador no conoce
+ * {@code DashboardAggregatorService}. El conteo de asignaciones históricas se
+ * expone a través de {@link #countAssignedEvents()} y lo consume {@code BeanConfig}
+ * en un {@code ApplicationListener<ContextRefreshedEvent>}, tras la inicialización
+ * completa del contexto Spring.
  */
 @Repository
 public class OrderHistoryRepositoryAdapter implements OrderViewRepositoryPort {
@@ -35,10 +41,13 @@ public class OrderHistoryRepositoryAdapter implements OrderViewRepositoryPort {
     private final OrderHistoryJpaRepository jpaRepository;
 
     /** Proyección en memoria: estado actual de cada pedido. */
-    private final Map<String, OrderView>    currentOrders = new ConcurrentHashMap<>();
+    private final Map<String, OrderView> currentOrders = new ConcurrentHashMap<>();
 
     /** Próximo sequence_num por pedido. */
-    private final Map<String, Integer>      nextSeqNum    = new ConcurrentHashMap<>();
+    private final Map<String, Integer>   nextSeqNum    = new ConcurrentHashMap<>();
+
+    /** Número de eventos DRIVER_ASSIGNED encontrados en el último replay. */
+    private volatile int assignedEventsCount = 0;
 
     public OrderHistoryRepositoryAdapter(OrderHistoryJpaRepository jpaRepository) {
         this.jpaRepository = jpaRepository;
@@ -46,12 +55,13 @@ public class OrderHistoryRepositoryAdapter implements OrderViewRepositoryPort {
 
     /**
      * Reconstruye la proyección en memoria aplicando los eventos persistidos en
-     * orden de sequence_num. Llamado al arrancar el servicio.
+     * orden de {@code sequence_num}. Llamado automáticamente por Spring al arrancar.
      */
     @PostConstruct
     public void loadHistory() {
         currentOrders.clear();
         nextSeqNum.clear();
+        assignedEventsCount = 0;
 
         List<OrderHistoryEntity> allEvents =
                 jpaRepository.findAllByOrderByOrderIdAscSequenceNumAscOccurredAtAsc();
@@ -59,7 +69,7 @@ public class OrderHistoryRepositoryAdapter implements OrderViewRepositoryPort {
         for (OrderHistoryEntity entity : allEvents) {
             String orderId = entity.getOrderId();
 
-            // Reconstruir o actualizar la proyección
+            // Primer evento del pedido: establecer la vista inicial
             OrderView view = currentOrders.computeIfAbsent(orderId, id ->
                     OrderView.restoreFull(
                             entity.getOrderId(),
@@ -73,29 +83,40 @@ public class OrderHistoryRepositoryAdapter implements OrderViewRepositoryPort {
                     )
             );
 
-            // Para registros que no son el primero, actualizar el estado
-            if (currentOrders.containsKey(orderId) &&
-                    entity.getSequenceNum() > 0) {
-                // Actualizar la vista al estado más reciente de la secuencia
+            // Eventos siguientes: actualizar al estado más reciente, preservando
+            // los campos enriquecidos del primer evento (address, items, total)
+            if (entity.getSequenceNum() > 0) {
                 currentOrders.put(orderId, OrderView.restoreFull(
                         entity.getOrderId(),
-                        entity.getCustomerId() != null ? entity.getCustomerId() : view.getCustomerId(),
+                        entity.getCustomerId()      != null ? entity.getCustomerId()      : view.getCustomerId(),
                         entity.getDeliveryAddress() != null ? entity.getDeliveryAddress() : view.getDeliveryAddress(),
-                        entity.getTotalAmount() != null ? entity.getTotalAmount() : view.getTotalAmount(),
-                        entity.getItemsJson() != null ? entity.getItemsJson() : view.getItemsJson(),
-                        entity.getDriverId() != null && !entity.getDriverId().equals("unknown")
+                        entity.getTotalAmount()     != null ? entity.getTotalAmount()     : view.getTotalAmount(),
+                        entity.getItemsJson()       != null ? entity.getItemsJson()       : view.getItemsJson(),
+                        entity.getDriverId() != null && !"unknown".equals(entity.getDriverId())
                                 ? entity.getDriverId() : view.getDriverId(),
                         entity.getState(),
                         entity.getOccurredAt()
                 ));
             }
 
-            // Actualizar el próximo sequence_num
+            if (dtos.Names.EVENT_DRIVER_ASSIGNED.equals(entity.getEventType())) {
+                assignedEventsCount++;
+            }
+
             nextSeqNum.merge(orderId, entity.getSequenceNum() + 1, Math::max);
         }
 
-        log.info("Event Store replay completado: {} pedidos reconstruidos desde {} eventos",
-                currentOrders.size(), allEvents.size());
+        log.info("Event Store replay completado: {} pedidos reconstruidos desde {} eventos ({} asignaciones)",
+                currentOrders.size(), allEvents.size(), assignedEventsCount);
+    }
+
+    /**
+     * Número de eventos {@code DRIVER_ASSIGNED} encontrados durante el último replay.
+     * Consumido por {@code BeanConfig} para inicializar el índice Round Robin del
+     * aggregator una vez que todos los beans de Spring están listos.
+     */
+    public int countAssignedEvents() {
+        return assignedEventsCount;
     }
 
     @Override
@@ -111,16 +132,12 @@ public class OrderHistoryRepositoryAdapter implements OrderViewRepositoryPort {
     /**
      * Persiste el nuevo estado del pedido como un evento inmutable y actualiza
      * la proyección en memoria.
-     *
-     * @param view      proyección actualizada del pedido
-     * @param eventType tipo canónico del evento (ej. "ORDER_CREATED")
      */
     @Override
     public void save(OrderView view, String eventType) {
         String orderId = view.getOrderId();
         int seq = nextSeqNum.getOrDefault(orderId, 0);
 
-        // Idempotencia: verificar si ya existe un evento igual antes de insertar
         boolean alreadyExists = jpaRepository
                 .findTopByOrderIdOrderBySequenceNumDesc(orderId)
                 .map(last -> last.getSequenceNum() == seq - 1
@@ -141,10 +158,6 @@ public class OrderHistoryRepositoryAdapter implements OrderViewRepositoryPort {
         currentOrders.put(orderId, view);
     }
 
-    /**
-     * Devuelve todos los eventos de un pedido en orden de secuencia.
-     * Permite reconstruir el estado completo desde cero (replay).
-     */
     public List<OrderHistoryEntity> findEventsByOrderId(String orderId) {
         return jpaRepository.findByOrderIdOrderBySequenceNumAscOccurredAtAsc(orderId);
     }

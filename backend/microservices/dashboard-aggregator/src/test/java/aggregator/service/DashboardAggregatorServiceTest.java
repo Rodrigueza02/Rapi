@@ -29,7 +29,8 @@ class DashboardAggregatorServiceTest {
     void setUp() {
         repo        = mock(OrderViewRepositoryPort.class);
         broadcaster = mock(DashboardBroadcastPort.class);
-        service     = new DashboardAggregatorService(repo, broadcaster);
+        service     = new DashboardAggregatorService(repo, broadcaster,
+                List.of("driver-1", "driver-2", "driver-3", "driver-4"));
     }
 
     // ── Creación de vistas iniciales ─────────────────────────────────────────
@@ -37,7 +38,7 @@ class DashboardAggregatorServiceTest {
     @Test
     void processCreatedEvent_createsNewView() {
         when(repo.findById("o-1")).thenReturn(Optional.empty());
-        service.process(new OrderCreatedEvent("o-1", null, "c-1", T0));
+        service.process(new OrderCreatedEvent("o-1", null, "c-1", null, null, null, T0));
         verify(repo).save(any(OrderView.class), eq(Names.EVENT_ORDER_CREATED));
         verify(broadcaster).broadcast(any(OrderView.class));
     }
@@ -62,7 +63,7 @@ class DashboardAggregatorServiceTest {
 
     @Test
     void fullLifecycle_sixTransitions() {
-        OrderView view = OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", T0));
+        OrderView view = OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", null, null, null, T0));
         when(repo.findById("o-1")).thenReturn(Optional.of(view));
 
         service.process(new OrderPreparedEvent("o-1", null, "c-1", T0.plusSeconds(4)));
@@ -91,7 +92,7 @@ class DashboardAggregatorServiceTest {
         List<OrderView> all = new ArrayList<>();
 
         // CREATED → activo
-        all.add(OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", T0)));
+        all.add(OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", null, null, null, T0)));
 
         // PREPARED → activo
         all.add(OrderView.from(new OrderPreparedEvent("o-2", null, "c-2", T0)));
@@ -102,7 +103,7 @@ class DashboardAggregatorServiceTest {
         all.add(assigned);
 
         // DELIVERED → no activo
-        OrderView delivered = OrderView.from(new OrderCreatedEvent("o-4", null, "c-4", T0));
+        OrderView delivered = OrderView.from(new OrderCreatedEvent("o-4", null, "c-4", null, null, null, T0));
         delivered.apply(new OrderPreparedEvent("o-4",  null,  "c-4", T0.plusSeconds(4)));
         delivered.apply(new DriverAssignedEvent("o-4", "d-1", "c-4", T0.plusSeconds(8)));
         delivered.apply(new OrderOnTheWayEvent("o-4",  "d-1", "c-4", T0.plusSeconds(12)));
@@ -127,7 +128,7 @@ class DashboardAggregatorServiceTest {
 
     @Test
     void duplicateEvent_notPersisted() {
-        OrderView view = OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", T0));
+        OrderView view = OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", null, null, null, T0));
         view.apply(new OrderPreparedEvent("o-1", null, "c-1", T0.plusSeconds(4)));
         view.apply(new DriverAssignedEvent("o-1", "d-1", "c-1", T0.plusSeconds(8)));
 
@@ -150,7 +151,7 @@ class DashboardAggregatorServiceTest {
     @Test
     void invalidTransition_throwsIllegalState() {
         // ASSIGNED no puede ir directamente a ARRIVING (debe pasar por ON_THE_WAY)
-        OrderView view = OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", T0));
+        OrderView view = OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", null, null, null, T0));
         view.apply(new OrderPreparedEvent("o-1", null, "c-1", T0.plusSeconds(4)));
         view.apply(new DriverAssignedEvent("o-1", "d-1", "c-1", T0.plusSeconds(8)));
 
@@ -160,5 +161,48 @@ class DashboardAggregatorServiceTest {
             service.process(new DriverArrivingEvent("o-1", "d-1", "c-1", T0.plusSeconds(12)))
         ).isInstanceOf(IllegalStateException.class)
          .hasMessageContaining("ASSIGNED");
+    }
+
+    // ── Round Robin: seedRoundRobinFromIndex ─────────────────────────────────
+
+    @Test
+    void seedRoundRobinFromIndex_setsCorrectNextDriver() {
+        // Con 4 drivers, índice 2 → próximo es "driver-3"
+        service.seedRoundRobinFromIndex(2);
+        var rr = service.getRoundRobin();
+        assertThat(rr.nextDriverId()).isEqualTo("driver-3");
+        assertThat(rr.currentIndex()).isEqualTo(2);
+    }
+
+    @Test
+    void seedRoundRobinFromIndex_wrapsCorrectly() {
+        // índice 7 con 4 drivers → 7 % 4 = 3 → "driver-4"
+        service.seedRoundRobinFromIndex(7);
+        var rr = service.getRoundRobin();
+        assertThat(rr.nextDriverId()).isEqualTo("driver-4");
+    }
+
+    // ── Round Robin: trackDriver no avanza en evento duplicado ───────────────
+
+    @Test
+    void duplicateDriverAssigned_doesNotAdvanceRoundRobinIndex() {
+        // Preparar una vista en estado PREPARED
+        OrderView view = OrderView.from(new OrderPreparedEvent("o-1", null, "c-1", T0));
+        when(repo.findById("o-1")).thenReturn(Optional.of(view));
+
+        // Primer DRIVER_ASSIGNED legítimo
+        service.process(new DriverAssignedEvent("o-1", "d-1", "c-1", T0.plusSeconds(4)));
+        int indexAfterFirst = service.getRoundRobin().currentIndex();
+
+        // Segundo DRIVER_ASSIGNED duplicado (mismo timestamp → apply() retorna false)
+        reset(repo, broadcaster);
+        when(repo.findById("o-1")).thenReturn(Optional.of(view));
+        service.process(new DriverAssignedEvent("o-1", "d-1", "c-1", T0.plusSeconds(4)));
+
+        // El índice no debe haber avanzado de nuevo
+        assertThat(service.getRoundRobin().currentIndex()).isEqualTo(indexAfterFirst);
+        // Y no se debe haber persistido ni difundido nada
+        verify(repo, never()).save(any(), anyString());
+        verify(broadcaster, never()).broadcast(any());
     }
 }

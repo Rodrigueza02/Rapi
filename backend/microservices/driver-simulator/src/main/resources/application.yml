@@ -14,6 +14,6 @@ spring:
 
 app:
   simulation:
-    on-the-way-seconds: 4
-    arrive-seconds: 4
-    deliver-seconds: 4
+    on-the-way-seconds: 6   # ASSIGNED → ON_THE_WAY   (visible ~6 s en el dashboard)
+    arrive-seconds:     6   # ON_THE_WAY → ARRIVING   (visible ~6 s en el dashboard)
+    deliver-seconds:    6   # ARRIVING → DELIVERED    (visible ~6 s en el dashboard)

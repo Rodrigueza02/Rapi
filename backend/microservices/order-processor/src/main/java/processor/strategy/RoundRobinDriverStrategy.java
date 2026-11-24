@@ -22,4 +22,13 @@ public class RoundRobinDriverStrategy implements DriverAssignmentStrategy {
         int index = Math.floorMod(next.getAndIncrement(), driverIds.size());
         return driverIds.get(index);
     }
+
+    /** Índice del próximo turno (0-based). Permite que el aggregator se sincronice. */
+    public int currentIndex() {
+        return Math.floorMod(next.get(), driverIds.size());
+    }
+
+    public List<String> getDriverIds() {
+        return driverIds;
+    }
 }

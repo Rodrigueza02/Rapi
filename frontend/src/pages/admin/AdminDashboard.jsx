@@ -1,9 +1,23 @@
 /**
  * AdminDashboard.jsx
+ *
  * Única fuente de datos para el dashboard: controla todos los fetches
  * y los refresca en tiempo real cuando llegan eventos vía WebSocket.
+ *
+ * WEBSOCKET
+ * ---------
+ * - Una sola conexión (useWebSocket abre exactamente un socket por ciclo de vida).
+ * - onWsEvent es estable (useCallback con refs de funciones también estables).
+ * - wsStatus se reporta al AdminLayout a través de useOutletContext para que el
+ *   header muestre el indicador de conexión real sin abrir un segundo socket.
+ *
+ * REFRESCO DE DATOS
+ * -----------------
+ * Cuando llega cualquier evento WS se refrescan pedidos, stats y round-robin
+ * con fetch REST al aggregator (fuente de verdad).
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { Package } from 'lucide-react';
 
 import DashboardStats     from '../../components/dashboard/DashboardStats.jsx';
@@ -26,19 +40,31 @@ export default function AdminDashboard() {
   const [cancelOrderId,   setCancelOrderId]   = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
+  /* ── Datos del backend ──────────────────────────────────────────────────── */
   const { orders, loading: ordersLoading, error, reload: reloadOrders } = useOrders();
   const { roundRobin, loading: rrLoading, reload: reloadRR }            = useRoundRobin();
-  const { stats, loading: statsLoading, reload: reloadStats }           = useDashboardStats(30_000);
+  const { stats, loading: statsLoading, reload: reloadStats }           = useDashboardStats();
 
-  // Cuando llega un evento WS: refrescar pedidos, stats y round-robin
+  /* ── Outlet context: reportar estado WS al layout ──────────────────────── */
+  // useOutletContext puede devolver undefined si el componente se usa fuera del layout.
+  const outletCtx = useOutletContext?.() ?? {};
+  const reportWsStatus = outletCtx.reportWsStatus ?? (() => {});
+
+  /* ── WebSocket ──────────────────────────────────────────────────────────── */
+  // onWsEvent: refresca los tres orígenes de datos al llegar cualquier evento.
+  // Es estable porque reloadOrders, reloadStats y reloadRR son useCallback.
   const onWsEvent = useCallback(() => {
     reloadOrders();
     reloadStats();
     reloadRR();
   }, [reloadOrders, reloadStats, reloadRR]);
 
-  useWebSocket(onWsEvent);
+  const { wsStatus } = useWebSocket(onWsEvent);
 
+  // Propagar el estado de conexión al header del layout.
+  useEffect(() => { reportWsStatus(wsStatus); }, [wsStatus, reportWsStatus]);
+
+  /* ── Filtrado de pedidos ────────────────────────────────────────────────── */
   const filtered = orders.filter(o =>
     !search ||
     o.order_id?.toLowerCase().includes(search.toLowerCase()) ||
@@ -49,7 +75,7 @@ export default function AdminDashboard() {
   return (
     <div className="admin-dashboard">
 
-      {/* Métricas + tarjetas de estado — alimentadas desde los fetches del dashboard */}
+      {/* Métricas + tarjetas de estado */}
       <DashboardStats
         stats={stats}
         orders={orders}
