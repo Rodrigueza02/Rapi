@@ -18,14 +18,21 @@ class OrderEventTest {
 
     @Test
     void rejectsBlankDriverId() {
-        assertThatThrownBy(() -> new DriverAssignedEvent("order-1", " ", Instant.now()))
+        assertThatThrownBy(() -> new DriverAssignedEvent("order-1", " ", "customer-1", Instant.now()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("driver_id");
     }
 
     @Test
+    void rejectsBlankCustomerId() {
+        assertThatThrownBy(() -> new DriverArrivingEvent("order-1", "driver-1", " ", Instant.now()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("customer_id");
+    }
+
+    @Test
     void rejectsMissingTimestamp() {
-        assertThatThrownBy(() -> new OrderDeliveredEvent("order-1", "driver-1", null))
+        assertThatThrownBy(() -> new OrderDeliveredEvent("order-1", "driver-1", "customer-1", null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("occurred_at");
     }
@@ -33,7 +40,8 @@ class OrderEventTest {
     @Test
     void writesEventTypeAndSnakeCaseFields() throws Exception {
         // Arrange
-        OrderEvent event = new DriverAssignedEvent("order-1", "driver-1", Instant.parse("2026-11-21T10:00:00Z"));
+        OrderEvent event = new DriverAssignedEvent("order-1", "driver-1", "customer-1",
+                Instant.parse("2026-11-21T10:00:00Z"));
 
         // Act
         String json = mapper.writeValueAsString(event);
@@ -42,7 +50,8 @@ class OrderEventTest {
         assertThat(json)
                 .contains("\"event_type\":\"DRIVER_ASSIGNED\"")
                 .contains("\"order_id\":\"order-1\"")
-                .contains("\"driver_id\":\"driver-1\"");
+                .contains("\"driver_id\":\"driver-1\"")
+                .contains("\"customer_id\":\"customer-1\"");
     }
 
     @Test
@@ -50,7 +59,7 @@ class OrderEventTest {
         // Arrange
         String json = """
                 {"event_type":"DRIVER_ARRIVING","order_id":"order-1","driver_id":"driver-1",
-                 "occurred_at":"2026-11-21T10:05:00Z"}""";
+                 "customer_id":"customer-1","occurred_at":"2026-11-21T10:05:00Z"}""";
 
         // Act
         OrderEvent event = mapper.readValue(json, OrderEvent.class);
@@ -58,18 +67,36 @@ class OrderEventTest {
         // Assert
         assertThat(event).isInstanceOf(DriverArrivingEvent.class);
         assertThat(event.orderId()).isEqualTo("order-1");
+        assertThat(event.customerId()).isEqualTo("customer-1");
     }
 
     @Test
-    void onlyTheThreeKnownEventsAreAllowed() {
-        // Act
+    void allSevenKnownEventsArePermitted() {
         Class<?>[] permitted = OrderEvent.class.getPermittedSubclasses();
-
-        // Assert
         assertThat(OrderEvent.class.isSealed()).isTrue();
         assertThat(permitted).containsExactlyInAnyOrder(
+                OrderCreatedEvent.class,
+                OrderPreparedEvent.class,
                 DriverAssignedEvent.class,
+                OrderOnTheWayEvent.class,
                 DriverArrivingEvent.class,
-                OrderDeliveredEvent.class);
+                OrderDeliveredEvent.class,
+                OrderCancelledEvent.class);
+    }
+
+    @Test
+    void writesPreparedEventType() throws Exception {
+        OrderEvent event = new OrderPreparedEvent("order-1", null, "customer-1",
+                Instant.parse("2026-11-21T10:00:00Z"));
+        String json = mapper.writeValueAsString(event);
+        assertThat(json).contains("\"event_type\":\"ORDER_PREPARED\"");
+    }
+
+    @Test
+    void writesCancelledEventType() throws Exception {
+        OrderEvent event = new OrderCancelledEvent("order-1", "driver-1", "customer-1",
+                Instant.parse("2026-11-21T10:00:00Z"));
+        String json = mapper.writeValueAsString(event);
+        assertThat(json).contains("\"event_type\":\"ORDER_CANCELLED\"");
     }
 }

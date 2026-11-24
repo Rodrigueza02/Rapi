@@ -1,0 +1,258 @@
+name: rappi-stream-actual
+
+x-java-common: &java-common
+  cpus: "0.50"
+  mem_limit: 512m
+  restart: unless-stopped
+
+x-rabbit-env: &rabbit-env
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_USER: rappi
+  RABBITMQ_PASSWORD: ${RAPPI_RABBIT_PASSWORD:-rappi_local_2026}
+
+x-kafka-env: &kafka-env
+  KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: rappistream
+      POSTGRES_USER: rappi
+      POSTGRES_PASSWORD: ${RAPPI_DB_PASSWORD:-rappi_local_2026}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rappi -d rappistream"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    cpus: "0.50"
+    mem_limit: 512m
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: rappi
+      RABBITMQ_DEFAULT_PASS: ${RAPPI_RABBIT_PASSWORD:-rappi_local_2026}
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    cpus: "0.50"
+    mem_limit: 512m
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    hostname: kafka
+    environment:
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 40s
+    cpus: "0.75"
+    mem_limit: 1g
+    restart: unless-stopped
+
+  order-api:
+    <<: *java-common
+    build:
+      context: ./backend
+      dockerfile: microservices/order-api/Dockerfile
+    environment:
+      <<: *rabbit-env
+      SERVER_PORT: "8081"
+      JWT_SECRET: ${RAPPI_JWT_SECRET:?Configura RAPPI_JWT_SECRET en .env}
+    ports:
+      - "127.0.0.1:8081:8081"
+    depends_on:
+      - rabbitmq
+    networks:
+      - internal
+      - public
+
+    
+  auth-service:
+    <<: *java-common
+    build:
+      context: ./backend
+      dockerfile: microservices/auth-service/Dockerfile
+    environment:
+      SERVER_PORT: "8087"
+      DB_URL: jdbc:postgresql://postgres:5432/rappistream
+      DB_USER: rappi
+      DB_PASSWORD: ${RAPPI_DB_PASSWORD:-rappi_local_2026}
+      JWT_SECRET: ${RAPPI_JWT_SECRET:?Configura RAPPI_JWT_SECRET en .env}
+    ports:
+      - "127.0.0.1:8087:8087"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+      - public
+
+
+  order-processor:
+    <<: *java-common
+    build:
+      context: ./backend
+      dockerfile: microservices/order-processor/Dockerfile
+    environment:
+      <<: [*rabbit-env, *kafka-env]
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: rappistream
+      POSTGRES_USER: rappi
+      POSTGRES_PASSWORD: ${RAPPI_DB_PASSWORD:-rappi_local_2026}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - internal
+
+  driver-simulator:
+    <<: *java-common
+    build:
+      context: ./backend
+      dockerfile: microservices/driver-simulator/Dockerfile
+    environment:
+      <<: *kafka-env
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - internal
+
+  notification-router:
+    <<: *java-common
+    build:
+      context: ./backend
+      dockerfile: microservices/notification-router/Dockerfile
+    environment:
+      <<: [*rabbit-env, *kafka-env]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - internal
+
+  sms-worker:
+    <<: *java-common
+    build:
+      context: ./backend
+      dockerfile: microservices/sms-worker/Dockerfile
+    environment:
+      <<: *rabbit-env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - internal
+    deploy:
+      replicas: 2
+
+  push-worker:
+    <<: *java-common
+    build:
+      context: ./backend
+      dockerfile: microservices/push-worker/Dockerfile
+    environment:
+      <<: *rabbit-env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - internal
+    deploy:
+      replicas: 2
+
+  dashboard-backend:
+    <<: *java-common
+    build:
+      context: ./backend
+      dockerfile: microservices/dashboard-backend/Dockerfile
+    environment:
+      SERVER_PORT: "8086"
+    ports:
+      - "127.0.0.1:8086:8086"
+    networks:
+      - internal
+      - public
+
+  dashboard-aggregator:
+    <<: *java-common
+    build:
+      context: ./backend
+      dockerfile: microservices/dashboard-aggregator/Dockerfile
+    environment:
+      <<: [*kafka-env, *rabbit-env]
+      DB_URL: jdbc:postgresql://postgres:5432/rappistream
+      DB_USER: rappi
+      DB_PASSWORD: ${RAPPI_DB_PASSWORD:-rappi_local_2026}
+      DASHBOARD_BACKEND_WS_URL: ws://dashboard-backend:8086/ws/ingest
+      JWT_SECRET: ${RAPPI_JWT_SECRET:?Configura RAPPI_JWT_SECRET en .env}
+    ports:
+      - "127.0.0.1:8085:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      dashboard-backend:
+        condition: service_started
+    networks:
+      - internal
+      - public
+
+
+networks:
+  internal:
+    name: rappi_actual_internal_net
+    driver: bridge
+    internal: true
+  public:
+    name: rappi_actual_public_net
+    driver: bridge
+
+volumes:
+  postgres_data:
+  kafka_data:

@@ -1,0 +1,30 @@
+/* sidebar-footer.css — bloque inferior del sidebar con la ilustración */
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  /* Sin animaciones ni transformaciones en el contenedor */
+  animation: none;
+  transform: none;
+}
+
+/* Ilustración del repartidor en moto — estática, sin movimiento */
+.sidebar-illustration {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  object-fit: contain;
+  margin: 0 auto;
+  /* Desactiva cualquier animación o transición residual */
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+  /* Evita que el layout cambie durante scroll */
+  position: relative;
+  flex-shrink: 0;
+}

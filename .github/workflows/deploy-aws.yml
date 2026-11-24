@@ -1,48 +1,236 @@
-name: Despliegue automatico AWS
+name: Desplegar Rappi-Stream AWS
 
 on:
+  push:
+    branches:
+      - dev
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
-  group: deploy-aws
+  group: rappi-aws-production
   cancel-in-progress: false
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    runs-on: [self-hosted, Linux, X64, rappi-production]
+    timeout-minutes: 40
+
+    env:
+      COMPOSE: "docker compose -f docker-compose.yml -f docker-compose.aws.yml -p rappi-stream-actual"
+
     steps:
-      - name: Configurar SSH
-        env:
-          SSH_KEY: ${{ secrets.AWS_SSH_KEY }}
-          SSH_HOST: ${{ secrets.AWS_HOST }}
-          SSH_USER: ${{ secrets.AWS_USER }}
+
+      # ── 1. Verificar rama y estado del repositorio ───────────────────────
+      - name: Verificar rama y estado limpio
         run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
-          chmod 600 ~/.ssh/id_deploy
-          ssh-keyscan -t ed25519 "$SSH_HOST" > ~/.ssh/known_hosts
-          EXPECTED="SHA256:TSlPaViNUdePpWhSkDVjPBnz6+t7GWublvAEydlUCY8"
-          ACTUAL="$(ssh-keygen -lf ~/.ssh/known_hosts -E sha256 | awk '{print $2}')"
-          if [ "$ACTUAL" != "$EXPECTED" ]; then
-            echo "ERROR: La identidad SSH de AWS no coincide"
+          set -e
+          cd /home/ubuntu/rappi-stream
+          test "$(git branch --show-current)" = "dev"
+          test -z "$(git status --porcelain)"
+          git fetch origin dev
+
+      # ── 2. Actualizar código ─────────────────────────────────────────────
+      - name: Actualizar codigo
+        run: |
+          set -e
+          cd /home/ubuntu/rappi-stream
+          git merge --ff-only origin/dev
+
+      # ── 3. Verificar esquema PostgreSQL (solo lectura, sin migraciones) ───
+      #   Falla si falta alguna columna o si el CHECK constraint sigue activo.
+      #   El volumen postgres_data NO se toca. Los usuarios ADMIN se verifican.
+      - name: Verificar esquema PostgreSQL
+        run: |
+          set -e
+          cd /home/ubuntu/rappi-stream
+
+          # Helper: verifica que una columna exista en la tabla indicada.
+          check_col() {
+            local table=$1 col=$2
+            local n
+            n=$($COMPOSE exec -T postgres \
+              psql -U rappi -d rappistream -tAc \
+              "SELECT COUNT(*) FROM information_schema.columns
+               WHERE table_name='$table' AND column_name='$col';" 2>/dev/null) || n=0
+            if [ "${n:-0}" != "1" ]; then
+              echo "FALTA columna $table.$col — ejecutar 003_add_state_columns.sql antes del despliegue."
+              exit 1
+            fi
+            echo "OK  $table.$col"
+          }
+
+          # Columnas requeridas por la migración 003
+          check_col orders          prepared_at
+          check_col order_history   customer_id
+          check_col order_history   delivery_address
+          check_col order_history   total_amount
+          check_col order_history   items_json
+          check_col order_history   event_type
+          check_col order_history   sequence_num
+
+          # CHECK constraint debe estar eliminado
+          constraint=$($COMPOSE exec -T postgres \
+            psql -U rappi -d rappistream -tAc \
+            "SELECT COUNT(*) FROM information_schema.table_constraints
+             WHERE constraint_name='order_history_state_check';" 2>/dev/null) || constraint=1
+          if [ "${constraint:-1}" != "0" ]; then
+            echo "FALTA eliminar order_history_state_check — ejecutar 003_add_state_columns.sql."
             exit 1
           fi
+          echo "OK  order_history_state_check ausente"
 
-      - name: Desplegar en EC2
-        env:
-          SSH_HOST: ${{ secrets.AWS_HOST }}
-          SSH_USER: ${{ secrets.AWS_USER }}
+          # Al menos un usuario ADMIN debe existir (no crear, solo verificar)
+          admins=$($COMPOSE exec -T postgres \
+            psql -U rappi -d rappistream -tAc \
+            "SELECT COUNT(*) FROM usuarios WHERE rol='ADMIN';" 2>/dev/null) || admins=0
+          if [ "${admins:-0}" = "0" ]; then
+            echo "ERROR: no existe ningun usuario ADMIN en produccion."
+            exit 1
+          fi
+          echo "OK  $admins usuario(s) ADMIN presente(s)"
+
+          # Verificar variables de entorno críticas (sin imprimir su valor)
+          for var in RAPPI_JWT_SECRET RAPPI_DB_PASSWORD RAPPI_RABBIT_PASSWORD; do
+            val=$(grep "^${var}=" .env 2>/dev/null | cut -d= -f2-)
+            if [ -z "$val" ]; then
+              echo "ADVERTENCIA: $var no encontrada en .env — verificar configuración."
+            else
+              echo "OK  $var configurada"
+            fi
+          done
+
+      # ── 4. Respaldo PostgreSQL ───────────────────────────────────────────
+      #   Falla explícitamente si el directorio no existe o no es escribible.
+      #   El despliegue no continúa si el respaldo no se genera.
+      - name: Respaldo PostgreSQL
         run: |
-          ssh -i ~/.ssh/id_deploy "$SSH_USER@$SSH_HOST" 'bash -se' <<'REMOTE'
           set -e
-          cd ~/rappi-stream
+          cd /home/ubuntu/rappi-stream
+          BACKUP_DIR=/home/ubuntu/backups
+          if [ ! -d "$BACKUP_DIR" ]; then
+            echo "ERROR: directorio $BACKUP_DIR no existe. Crearlo con: mkdir -p $BACKUP_DIR"
+            exit 1
+          fi
+          TS=$(date +%Y%m%d_%H%M%S)
+          BACKUP_FILE="$BACKUP_DIR/rappistream_pre_deploy_${TS}.sql"
+          $COMPOSE exec -T postgres \
+            pg_dump -U rappi -d rappistream --clean --if-exists -F p \
+            > "$BACKUP_FILE"
+          SIZE=$(wc -c < "$BACKUP_FILE")
+          if [ "$SIZE" -lt 1024 ]; then
+            echo "ERROR: respaldo generado pero parece vacío ($SIZE bytes). Abortando."
+            exit 1
+          fi
+          echo "OK  Respaldo generado: $BACKUP_FILE ($SIZE bytes)"
 
-          echo "===== CONEXION GITHUB ACTIONS CON AWS ====="
-          echo "Servidor conectado correctamente"
-          echo "===== VERSION ACTUAL ====="
-          git log -1 --oneline
-          echo "===== CONTENEDORES ====="
-          docker compose -f docker-compose.yml -f docker-compose.aws.yml ps
-          REMOTE
+      # ── 5. Construir imágenes ────────────────────────────────────────────
+      - name: Construir imagenes
+        run: |
+          set -e
+          cd /home/ubuntu/rappi-stream
+          $COMPOSE build \
+            order-api \
+            order-processor \
+            driver-simulator \
+            notification-router \
+            dashboard-aggregator \
+            dashboard-backend \
+            frontend
+
+      # ── 6. Desplegar backend ─────────────────────────────────────────────
+      #   --no-deps: no recrea postgres, kafka ni rabbitmq.
+      #   Sin --volumes: preserva postgres_data y kafka_data.
+      - name: Desplegar backend
+        run: |
+          set -e
+          cd /home/ubuntu/rappi-stream
+          $COMPOSE up -d --no-deps \
+            order-api \
+            order-processor \
+            driver-simulator \
+            notification-router \
+            dashboard-aggregator \
+            dashboard-backend
+
+      # ── 7. Desplegar frontend ────────────────────────────────────────────
+      - name: Desplegar frontend
+        run: |
+          set -e
+          cd /home/ubuntu/rappi-stream
+          $COMPOSE up -d --no-deps frontend
+
+      # ── 8. Verificar salud de servicios ──────────────────────────────────
+      #
+      #   order-api (8081 publicado en host):
+      #     curl desde el host a localhost:8081/actuator/health
+      #
+      #   dashboard-aggregator (8085 NO publicado en host):
+      #     docker compose exec para llamar desde dentro del contenedor
+      #
+      #   dashboard-backend (8086 NO publicado en host):
+      #     docker compose exec para llamar desde dentro del contenedor
+      #
+      #   frontend (80 publicado en host):
+      #     curl desde el host a localhost/
+      #
+      - name: Verificar salud de servicios
+        run: |
+          set -e
+          cd /home/ubuntu/rappi-stream
+
+          # Espera hasta que un curl en el host responda 200.
+          # -L sigue redirecciones (ej: http://localhost/ → https://localhost/).
+          # -k omite verificación TLS solo para checks locales de infraestructura.
+          wait_host() {
+            local name=$1 url=$2
+            echo "Esperando $name en $url ..."
+            for i in $(seq 1 24); do
+              code=$(curl -k -L -s -o /dev/null -w "%{http_code}" "$url" || echo 0)
+              if [ "$code" = "200" ]; then
+                echo "OK  $name responde (HTTP 200)"
+                return 0
+              fi
+              sleep 5
+            done
+            echo "ERROR: $name no respondio en 2 minutos ($url)"
+            exit 1
+          }
+
+          # Espera hasta que un curl DENTRO del contenedor responda 200
+          wait_container() {
+            local name=$1 service=$2 url=$3
+            echo "Esperando $name dentro del contenedor $service ..."
+            for i in $(seq 1 24); do
+              code=$($COMPOSE exec -T "$service" \
+                wget -q -O /dev/null -S "$url" 2>&1 | grep "HTTP/" | awk '{print $2}' | tail -1 || echo 0)
+              if [ "$code" = "200" ]; then
+                echo "OK  $name responde desde contenedor (HTTP 200)"
+                return 0
+              fi
+              sleep 5
+            done
+            echo "ERROR: $name no respondio en 2 minutos ($url desde $service)"
+            exit 1
+          }
+
+          # order-api — publicado en 127.0.0.1:8081 en AWS
+          wait_host order-api http://localhost:8081/actuator/health
+
+          # dashboard-aggregator — no publicado, check desde dentro del contenedor
+          wait_container dashboard-aggregator dashboard-aggregator \
+            http://localhost:8085/api/dashboard/stats
+
+          # dashboard-backend — no publicado, check desde dentro del contenedor
+          wait_container dashboard-backend dashboard-backend \
+            http://localhost:8086/api/dashboard/status
+
+          # frontend — publicado en :80
+          wait_host frontend http://localhost/
+
+          echo "--- Estado final de contenedores ---"
+          $COMPOSE ps \
+            order-api order-processor driver-simulator notification-router \
+            dashboard-aggregator dashboard-backend frontend

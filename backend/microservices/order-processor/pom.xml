@@ -15,12 +15,43 @@
     <name>order-processor</name>
 
     <dependencies>
+        <!-- Los records compartidos -->
         <dependency>
             <groupId>com.rappistream</groupId>
             <artifactId>dtos</artifactId>
             <version>${project.version}</version>
         </dependency>
 
+        <!-- RabbitMQ (consume new_orders_queue) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+
+        <!-- Kafka (publica en order_events) -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+
+        <!-- JPA + PostgreSQL (persistencia del pedido) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Jackson (JSON de los mensajes) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-json</artifactId>
+        </dependency>
+
+        <!-- Pruebas (JUnit 5, AssertJ y Mockito vienen incluidos) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -28,6 +59,13 @@
         </dependency>
     </dependencies>
 
-    <!-- Más adelante agregaremos aquí: amqp (RabbitMQ), kafka, data-jpa,
-         postgresql y el plugin de Spring Boot. Por ahora solo el dominio. -->
+    <build>
+        <plugins>
+            <!-- Empaqueta el .jar ejecutable que usa el Dockerfile -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 </project>
