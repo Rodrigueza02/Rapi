@@ -1,11 +1,16 @@
 /**
  * DashboardStats.jsx
- * Muestra: totales globales + tarjeta por cada estado en orden cronológico.
- * Fuente: GET /api/dashboard/stats  +  GET /api/dashboard/orders
+ * Tarjetas globales + tarjetas por estado.
+ *
+ * Recibe los datos como props para que AdminDashboard sea la única
+ * fuente de verdad y controle el refresco vía WebSocket.
+ *
+ * Props:
+ *   stats   — objeto de DashboardStatsDto (active_orders, delivered_orders, …)
+ *   orders  — array de OrderViewDto (se usa para el conteo por estado)
+ *   loading — boolean
  */
 import { ShoppingBag, CheckCircle2, Bike, Package } from 'lucide-react';
-import useDashboardStats from '../../hooks/useDashboardStats.js';
-import useOrders         from '../../hooks/useOrders.js';
 import { STATE_SEQUENCE, STATUS_LABEL, STATUS_COLOR } from '../../constants/orderStatus.js';
 
 const STATE_ICON = {
@@ -18,23 +23,19 @@ const STATE_ICON = {
   CANCELLED:  '❌',
 };
 
-export default function DashboardStats() {
-  const { stats, loading: sLoading } = useDashboardStats(15_000);
-  const { orders }                   = useOrders();
+const TOP_CARDS = [
+  { key: 'total_orders',     label: 'Pedidos totales', icon: Package,      color: 'red'    },
+  { key: 'active_orders',    label: 'Pedidos activos', icon: ShoppingBag,  color: 'orange' },
+  { key: 'delivered_orders', label: 'Entregados',      icon: CheckCircle2, color: 'green'  },
+  { key: 'total_drivers',    label: 'Repartidores',    icon: Bike,         color: 'blue'   },
+];
 
-  // Conteo real por estado desde la lista de pedidos
-  const countByState = {};
-  for (const s of STATE_SEQUENCE) countByState[s] = 0;
+export default function DashboardStats({ stats, orders = [], loading = false }) {
+  // Conteo por estado a partir de la lista completa de pedidos
+  const countByState = Object.fromEntries(STATE_SEQUENCE.map(s => [s, 0]));
   for (const o of orders) {
     if (countByState[o.state] !== undefined) countByState[o.state]++;
   }
-
-  const TOP_CARDS = [
-    { key: 'total_orders',   label: 'Pedidos totales',  icon: Package,      color: 'red' },
-    { key: 'active_orders',  label: 'Pedidos activos',  icon: ShoppingBag,  color: 'orange' },
-    { key: 'delivered_orders', label: 'Entregados',     icon: CheckCircle2, color: 'green' },
-    { key: 'total_drivers',  label: 'Repartidores',     icon: Bike,         color: 'blue' },
-  ];
 
   return (
     <>
@@ -47,7 +48,9 @@ export default function DashboardStats() {
             </div>
             <span className="stat-label">{label}</span>
             <strong className="stat-value">
-              {sLoading ? <span className="stat-skeleton" aria-hidden="true" /> : (stats?.[key] ?? '—')}
+              {loading
+                ? <span className="stat-skeleton" aria-hidden="true" />
+                : (stats?.[key] ?? '—')}
             </strong>
           </article>
         ))}

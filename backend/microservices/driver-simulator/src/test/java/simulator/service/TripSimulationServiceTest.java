@@ -3,6 +3,7 @@ package simulator.service;
 import dtos.DriverArrivingEvent;
 import dtos.DriverAssignedEvent;
 import dtos.OrderDeliveredEvent;
+import dtos.OrderOnTheWayEvent;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -30,7 +31,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * Dobles de prueba: el temporizador es un mock, así que la prueba NO espera
- * 8 ni 6 segundos: ejecutamos a mano la tarea que el servicio programó.
+ * retrasos reales: ejecutamos a mano las tareas que el servicio programó.
  */
 @ExtendWith(MockitoExtension.class)
 class TripSimulationServiceTest {
@@ -57,34 +58,42 @@ class TripSimulationServiceTest {
     }
 
     @Test
-    void publishesArrivingAndThenDeliveredWhenTheTimersFire() {
+    void publishesOnTheWayThenArrivingThenDeliveredWhenTimersFire() {
         // Arrange
-        when(timing.timeToArrive(any(Trip.class))).thenReturn(Duration.ofSeconds(8));
-        when(timing.timeToDeliver(any(Trip.class))).thenReturn(Duration.ofSeconds(6));
+        when(timing.timeToOnTheWay(any(Trip.class))).thenReturn(Duration.ofSeconds(4));
+        when(timing.timeToArrive(any(Trip.class))).thenReturn(Duration.ofSeconds(4));
+        when(timing.timeToDeliver(any(Trip.class))).thenReturn(Duration.ofSeconds(4));
         when(clock.instant()).thenReturn(NOW);
-        ArgumentCaptor<Runnable> arrivalTask = ArgumentCaptor.forClass(Runnable.class);
-        ArgumentCaptor<Runnable> deliveryTask = ArgumentCaptor.forClass(Runnable.class);
 
-        // Act: se programa la llegada y la ejecutamos "a mano"
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Runnable> onTheWayTask  = ArgumentCaptor.forClass(Runnable.class);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Runnable> arrivingTask  = ArgumentCaptor.forClass(Runnable.class);
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Runnable> deliveryTask  = ArgumentCaptor.forClass(Runnable.class);
+
+        // Act: trigger assignment, then fire each scheduled task in turn
         service.onDriverAssigned(assignedEvent());
-        verify(scheduler).schedule(eq(Duration.ofSeconds(8)), arrivalTask.capture());
-        arrivalTask.getValue().run();
+        verify(scheduler).schedule(eq(Duration.ofSeconds(4)), onTheWayTask.capture());
+        onTheWayTask.getValue().run();
 
-        // ...al llegar se programa la entrega, que también ejecutamos
-        verify(scheduler).schedule(eq(Duration.ofSeconds(6)), deliveryTask.capture());
-        deliveryTask.getValue().run();
+        verify(scheduler, times(2)).schedule(eq(Duration.ofSeconds(4)), arrivingTask.capture());
+        arrivingTask.getAllValues().get(1).run();
 
-        // Assert: salieron los dos eventos, en este orden
+        verify(scheduler, times(3)).schedule(eq(Duration.ofSeconds(4)), deliveryTask.capture());
+        deliveryTask.getAllValues().get(2).run();
+
+        // Assert: three events published in order
         InOrder inOrder = inOrder(eventPublisher);
+        inOrder.verify(eventPublisher).publish(new OrderOnTheWayEvent("order-1", "driver-1", "customer-1", NOW));
         inOrder.verify(eventPublisher).publish(new DriverArrivingEvent("order-1", "driver-1", "customer-1", NOW));
         inOrder.verify(eventPublisher).publish(new OrderDeliveredEvent("order-1", "driver-1", "customer-1", NOW));
     }
 
     @Test
-    void publishesNothingUntilTheTimersFire() {
+    void publishesNothingUntilTheFirstTimerFires() {
         // Arrange
-        when(timing.timeToArrive(any(Trip.class))).thenReturn(Duration.ofSeconds(8));
-        when(timing.timeToDeliver(any(Trip.class))).thenReturn(Duration.ofSeconds(6));
+        when(timing.timeToOnTheWay(any(Trip.class))).thenReturn(Duration.ofSeconds(4));
 
         // Act
         service.onDriverAssigned(assignedEvent());
@@ -96,14 +105,13 @@ class TripSimulationServiceTest {
     @Test
     void ignoresAnAssignedEventThatArrivesTwice() {
         // Arrange
-        when(timing.timeToArrive(any(Trip.class))).thenReturn(Duration.ofSeconds(8));
-        when(timing.timeToDeliver(any(Trip.class))).thenReturn(Duration.ofSeconds(6));
+        when(timing.timeToOnTheWay(any(Trip.class))).thenReturn(Duration.ofSeconds(4));
 
         // Act
         service.onDriverAssigned(assignedEvent());
         service.onDriverAssigned(assignedEvent());
 
-        // Assert: solo se programó UN viaje
+        // Assert: only one trip was scheduled
         verify(scheduler, times(1)).schedule(any(Duration.class), any(Runnable.class));
     }
 

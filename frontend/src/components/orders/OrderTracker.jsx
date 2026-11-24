@@ -185,12 +185,6 @@ export default function OrderTracker({ order, loading, error, onCancel }) {
               {formatTime(order.last_updated)}
             </span>
           </div>
-          <div className="detail-row" style={{ marginTop: '4px', flexDirection: 'column', gap: '6px' }}>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-              Dirección, productos y monto no están disponibles en el endpoint del dashboard.
-              Esta información se encuentra en el order-processor.
-            </span>
-          </div>
 
           {/* Acción cancelar — solo si el pedido no está entregado */}
           {order.state !== 'DELIVERED' && (

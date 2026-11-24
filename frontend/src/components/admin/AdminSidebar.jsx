@@ -4,7 +4,6 @@ import {
   Home,
   ShoppingBag,
   Bike,
-  Mail,
   LogOut,
 } from 'lucide-react';
 import { dashboardImages } from '../../data/dashboardImages.js';
@@ -25,11 +24,6 @@ const NAV_LINKS = [
     to: '/admin/repartidores',
     label: 'Repartidores',
     icon: Bike,
-  },
-  {
-    to: '/admin/correos',
-    label: 'Correos',
-    icon: Mail,
   },
 ];
 

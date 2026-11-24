@@ -1,5 +1,7 @@
 /**
- * AdminDashboard.jsx — sin tarjetas simuladas, con ciclo cronológico real.
+ * AdminDashboard.jsx
+ * Única fuente de datos para el dashboard: controla todos los fetches
+ * y los refresca en tiempo real cuando llegan eventos vía WebSocket.
  */
 import { useCallback, useState } from 'react';
 import { Package } from 'lucide-react';
@@ -13,9 +15,10 @@ import CancelOrderModal   from '../../components/orders/CancelOrderModal.jsx';
 import RoundRobinWheel    from '../../components/dashboard/RoundRobinWheel.jsx';
 import RoundRobinNextCard from '../../components/dashboard/RoundRobinNextCard.jsx';
 
-import useOrders     from '../../hooks/useOrders.js';
-import useRoundRobin from '../../hooks/useRoundRobin.js';
-import useWebSocket  from '../../hooks/useWebSocket.js';
+import useOrders         from '../../hooks/useOrders.js';
+import useRoundRobin     from '../../hooks/useRoundRobin.js';
+import useDashboardStats from '../../hooks/useDashboardStats.js';
+import useWebSocket      from '../../hooks/useWebSocket.js';
 
 export default function AdminDashboard() {
   const [search,          setSearch]          = useState('');
@@ -23,13 +26,16 @@ export default function AdminDashboard() {
   const [cancelOrderId,   setCancelOrderId]   = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const { orders, loading, error, reload: reloadOrders } = useOrders();
-  const { roundRobin, loading: rrLoading, reload: reloadRR } = useRoundRobin();
+  const { orders, loading: ordersLoading, error, reload: reloadOrders } = useOrders();
+  const { roundRobin, loading: rrLoading, reload: reloadRR }            = useRoundRobin();
+  const { stats, loading: statsLoading, reload: reloadStats }           = useDashboardStats(30_000);
 
+  // Cuando llega un evento WS: refrescar pedidos, stats y round-robin
   const onWsEvent = useCallback(() => {
     reloadOrders();
+    reloadStats();
     reloadRR();
-  }, [reloadOrders, reloadRR]);
+  }, [reloadOrders, reloadStats, reloadRR]);
 
   useWebSocket(onWsEvent);
 
@@ -43,8 +49,12 @@ export default function AdminDashboard() {
   return (
     <div className="admin-dashboard">
 
-      {/* Métricas + tarjetas de estado */}
-      <DashboardStats />
+      {/* Métricas + tarjetas de estado — alimentadas desde los fetches del dashboard */}
+      <DashboardStats
+        stats={stats}
+        orders={orders}
+        loading={statsLoading || ordersLoading}
+      />
 
       {/* Tabla de pedidos */}
       <section className="dashboard-section">
@@ -61,7 +71,7 @@ export default function AdminDashboard() {
         </div>
         <OrdersTable
           orders={filtered}
-          loading={loading}
+          loading={ordersLoading}
           error={error}
           onViewDetail={setDetailOrderId}
           onCancel={setCancelOrderId}

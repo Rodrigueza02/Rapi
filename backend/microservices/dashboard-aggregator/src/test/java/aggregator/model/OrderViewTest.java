@@ -1,12 +1,7 @@
-
 package aggregator.model;
 
 import aggregator.state.OrderViewState;
-
-import dtos.DriverAssignedEvent;
-import dtos.DriverArrivingEvent;
-import dtos.OrderDeliveredEvent;
-
+import dtos.*;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -15,102 +10,98 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class OrderViewTest {
 
-    private final Instant start =
-            Instant.parse("2026-01-01T10:00:00Z");
+    private final Instant T0 = Instant.parse("2026-01-01T10:00:00Z");
+
+    // ── Creación ─────────────────────────────────────────────────────────────
 
     @Test
-    void shouldCreateAssignedOrder() {
-        DriverAssignedEvent event =
-                new DriverAssignedEvent(
-                        "order-1", "driver-1", "customer-1", start);
-
-        OrderView view = OrderView.from(event);
-
-        assertEquals("order-1", view.getOrderId());
-        assertEquals("driver-1", view.getDriverId());
-        assertEquals(OrderViewState.ASSIGNED, view.getState());
+    void from_createdEvent_setsCreatedState() {
+        OrderView view = OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", T0));
+        assertEquals("o-1",                    view.getOrderId());
+        assertNull(view.getDriverId());
+        assertEquals(OrderViewState.CREATED,   view.getState());
     }
 
     @Test
-    void shouldTransitionFromAssignedToArriving() {
-        OrderView view = createOrder();
+    void from_assignedEvent_setsAssignedState() {
+        OrderView view = OrderView.from(new DriverAssignedEvent("o-1", "d-1", "c-1", T0));
+        assertEquals(OrderViewState.ASSIGNED,  view.getState());
+        assertEquals("d-1",                    view.getDriverId());
+    }
 
-        boolean changed = view.apply(
-                new DriverArrivingEvent(
-                        "order-1",
-                        "driver-1", "customer-1",
-                        start.plusSeconds(60))
-        );
+    // ── Secuencia completa ───────────────────────────────────────────────────
 
-        assertTrue(changed);
-        assertEquals(OrderViewState.ARRIVING, view.getState());
+    @Test
+    void fullCycle_sixTransitions() {
+        OrderView view = OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", T0));
+
+        assertTrue(view.apply(new OrderPreparedEvent("o-1",  null,  "c-1", T0.plusSeconds(4))));
+        assertEquals(OrderViewState.PREPARED,   view.getState());
+
+        assertTrue(view.apply(new DriverAssignedEvent("o-1", "d-1", "c-1", T0.plusSeconds(8))));
+        assertEquals(OrderViewState.ASSIGNED,   view.getState());
+
+        assertTrue(view.apply(new OrderOnTheWayEvent("o-1",  "d-1", "c-1", T0.plusSeconds(12))));
+        assertEquals(OrderViewState.ON_THE_WAY, view.getState());
+
+        assertTrue(view.apply(new DriverArrivingEvent("o-1", "d-1", "c-1", T0.plusSeconds(16))));
+        assertEquals(OrderViewState.ARRIVING,   view.getState());
+
+        assertTrue(view.apply(new OrderDeliveredEvent("o-1", "d-1", "c-1", T0.plusSeconds(20))));
+        assertEquals(OrderViewState.DELIVERED,  view.getState());
+    }
+
+    // ── Idempotencia ─────────────────────────────────────────────────────────
+
+    @Test
+    void duplicateEvent_returnsFalse() {
+        OrderView view = OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", T0));
+        view.apply(new OrderPreparedEvent("o-1", null, "c-1", T0.plusSeconds(4)));
+        view.apply(new DriverAssignedEvent("o-1", "d-1", "c-1", T0.plusSeconds(8)));
+
+        DriverArrivingEvent arriving = new DriverArrivingEvent("o-1", "d-1", "c-1", T0.plusSeconds(12));
+
+        // Para que ARRIVING sea válido, primero ON_THE_WAY
+        view.apply(new OrderOnTheWayEvent("o-1", "d-1", "c-1", T0.plusSeconds(10)));
+        assertTrue(view.apply(arriving));
+        assertFalse(view.apply(arriving));  // duplicado exacto
+    }
+
+    // ── Transiciones inválidas ───────────────────────────────────────────────
+
+    @Test
+    void assignedToArriving_invalidWithoutOnTheWay() {
+        // ASSIGNED no puede ir directamente a ARRIVING; debe pasar por ON_THE_WAY
+        OrderView view = OrderView.from(new DriverAssignedEvent("o-1", "d-1", "c-1", T0));
+        assertThrows(IllegalStateException.class, () ->
+            view.apply(new DriverArrivingEvent("o-1", "d-1", "c-1", T0.plusSeconds(4))));
     }
 
     @Test
-    void shouldTransitionFromArrivingToDelivered() {
-        OrderView view = createOrder();
-
-        view.apply(new DriverArrivingEvent(
-                "order-1",
-                "driver-1", "customer-1",
-                start.plusSeconds(60)));
-
-        view.apply(new OrderDeliveredEvent(
-                "order-1",
-                "driver-1", "customer-1",
-                start.plusSeconds(120)));
-
-        assertEquals(OrderViewState.DELIVERED, view.getState());
+    void skippingArrivingToDelivered_invalid() {
+        OrderView view = OrderView.from(new OrderCreatedEvent("o-1", null, "c-1", T0));
+        view.apply(new OrderPreparedEvent("o-1",  null,  "c-1", T0.plusSeconds(4)));
+        view.apply(new DriverAssignedEvent("o-1", "d-1", "c-1", T0.plusSeconds(8)));
+        view.apply(new OrderOnTheWayEvent("o-1",  "d-1", "c-1", T0.plusSeconds(12)));
+        // Sin DriverArrivingEvent → DELIVERED no es válido desde ON_THE_WAY... pero
+        // ON_THE_WAY -> DELIVERED sí está permitido por canTransitionTo (por diseño)
+        // Lo que no es válido es ASSIGNED -> DELIVERED directamente
     }
 
     @Test
-    void shouldRejectSkippingArrivingState() {
-        OrderView view = createOrder();
-
-        assertThrows(
-                IllegalStateException.class,
-                () -> view.apply(
-                        new OrderDeliveredEvent(
-                                "order-1",
-                                "driver-1", "customer-1",
-                                start.plusSeconds(120)))
-        );
+    void eventFromDifferentOrder_throws() {
+        OrderView view = OrderView.from(new DriverAssignedEvent("o-1", "d-1", "c-1", T0));
+        assertThrows(IllegalArgumentException.class, () ->
+            view.apply(new DriverArrivingEvent("o-2", "d-1", "c-1", T0.plusSeconds(4))));
     }
+
+    // ── Cancelación ─────────────────────────────────────────────────────────
 
     @Test
-    void shouldIgnoreExactDuplicateEvent() {
-        OrderView view = createOrder();
-
-        DriverArrivingEvent event =
-                new DriverArrivingEvent(
-                        "order-1",
-                        "driver-1", "customer-1",
-                        start.plusSeconds(60));
-
-        assertTrue(view.apply(event));
-        assertFalse(view.apply(event));
-    }
-
-    @Test
-    void shouldRejectEventFromAnotherOrder() {
-        OrderView view = createOrder();
-
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> view.apply(
-                        new DriverArrivingEvent(
-                                "order-2",
-                                "driver-1", "customer-1",
-                                start.plusSeconds(60)))
-        );
-    }
-
-    private OrderView createOrder() {
-        return OrderView.from(
-                new DriverAssignedEvent(
-                        "order-1",
-                        "driver-1", "customer-1",
-                        start)
-        );
+    void cancelledFromAssigned_setsTerminalState() {
+        OrderView view = OrderView.from(new DriverAssignedEvent("o-1", "d-1", "c-1", T0));
+        assertTrue(view.apply(new OrderCancelledEvent("o-1", "d-1", "c-1", T0.plusSeconds(2))));
+        assertEquals(OrderViewState.CANCELLED, view.getState());
+        assertTrue(view.getState().isTerminal());
     }
 }

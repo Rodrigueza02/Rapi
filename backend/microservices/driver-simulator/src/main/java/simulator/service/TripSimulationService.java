@@ -3,6 +3,7 @@ package simulator.service;
 import dtos.DriverArrivingEvent;
 import dtos.DriverAssignedEvent;
 import dtos.OrderDeliveredEvent;
+import dtos.OrderOnTheWayEvent;
 import simulator.model.Trip;
 import simulator.ports.DriverEventPublisherPort;
 import simulator.ports.TripSchedulerPort;
@@ -16,14 +17,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Ciclo completo:
- *   DRIVER_ASSIGNED → (delay) → DRIVER_ARRIVING → (delay) → ORDER_DELIVERED
- *
- * El order-processor convierte:
- *   DRIVER_ASSIGNED  → estado ASSIGNED
- *   DRIVER_ARRIVING  → estado ON_THE_WAY + ARRIVING (listener dashboard lo mapea)
- *   ORDER_DELIVERED  → estado DELIVERED
- *
- * El simulador no salta de ASSIGNED a DELIVERED.
+ *   DRIVER_ASSIGNED → (delay onTheWay) → ORDER_ON_THE_WAY
+ *                   → (delay arrive)   → DRIVER_ARRIVING
+ *                   → (delay deliver)  → ORDER_DELIVERED
  */
 public class TripSimulationService {
 
@@ -51,15 +47,25 @@ public class TripSimulationService {
 
         Trip trip = Trip.start(event.orderId(), event.driverId(), event.customerId());
 
-        Duration toArrive  = timing.timeToArrive(trip);
-        Duration toDeliver = timing.timeToDeliver(trip);
+        Duration toOnTheWay = timing.timeToOnTheWay(trip);
+        Duration toArrive   = timing.timeToArrive(trip);
+        Duration toDeliver  = timing.timeToDeliver(trip);
 
-        // 1. Después de timeToArrive → DRIVER_ARRIVING (repartidor llegando)
-        scheduler.schedule(toArrive, () -> {
-            arrive(trip);
-            // 2. Después de timeToDeliver → ORDER_DELIVERED
-            scheduler.schedule(toDeliver, () -> deliver(trip));
+        // 1. Después de timeToOnTheWay → ORDER_ON_THE_WAY
+        scheduler.schedule(toOnTheWay, () -> {
+            onTheWay(trip);
+            // 2. Después de timeToArrive → DRIVER_ARRIVING
+            scheduler.schedule(toArrive, () -> {
+                arrive(trip);
+                // 3. Después de timeToDeliver → ORDER_DELIVERED
+                scheduler.schedule(toDeliver, () -> deliver(trip));
+            });
         });
+    }
+
+    private void onTheWay(Trip trip) {
+        eventPublisher.publish(new OrderOnTheWayEvent(
+                trip.orderId(), trip.driverId(), trip.customerId(), clock.instant()));
     }
 
     private void arrive(Trip trip) {

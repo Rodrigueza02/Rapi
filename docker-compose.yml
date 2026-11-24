@@ -243,29 +243,6 @@ services:
       - internal
       - public
 
-  email-worker:
-    <<: *java-common
-    build:
-      context: ./backend
-      dockerfile: microservices/email-worker/Dockerfile
-    profiles: [email]
-    environment:
-      <<: *rabbit-env
-      DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: rappistream
-      DB_USER: rappi
-      DB_PASSWORD: ${RAPPI_DB_PASSWORD:-rappi_local_2026}
-      GMAIL_USER: ${GMAIL_USER:-change-me@gmail.com}
-      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-change-me}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    networks:
-      - internal
-      - public
 
 networks:
   internal:

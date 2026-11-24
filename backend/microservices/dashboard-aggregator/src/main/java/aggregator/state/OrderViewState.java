@@ -29,7 +29,7 @@ public enum OrderViewState {
         return switch (this) {
             case CREATED    -> next == PREPARED   || next == CANCELLED;
             case PREPARED   -> next == ASSIGNED   || next == CANCELLED;
-            case ASSIGNED   -> next == ON_THE_WAY || next == ARRIVING || next == CANCELLED;
+            case ASSIGNED   -> next == ON_THE_WAY || next == CANCELLED;
             case ON_THE_WAY -> next == ARRIVING   || next == DELIVERED;
             case ARRIVING   -> next == DELIVERED;
             case DELIVERED  -> false;

@@ -24,8 +24,10 @@ public final class Names {
     public static final String PUSH_QUEUE = "push_queue";
 
     // ---------- Tipos de evento (campo "event_type" de cada mensaje Kafka) ----------
+    public static final String EVENT_ORDER_CREATED   = "ORDER_CREATED";
     public static final String EVENT_ORDER_PREPARED  = "ORDER_PREPARED";
     public static final String EVENT_DRIVER_ASSIGNED = "DRIVER_ASSIGNED";
+    public static final String EVENT_ORDER_ON_THE_WAY = "ORDER_ON_THE_WAY";
     public static final String EVENT_DRIVER_ARRIVING = "DRIVER_ARRIVING";
     public static final String EVENT_ORDER_DELIVERED = "ORDER_DELIVERED";
     public static final String EVENT_ORDER_CANCELLED = "ORDER_CANCELLED";

@@ -39,8 +39,3 @@ app:
   jwt:
     secret: ${JWT_SECRET}
     issuer: rappi-stream-auth
-  email:
-    exchange: email_jobs
-    routing-key: email.send
-    sender: ${EMAIL_SENDER:julirodriguezandrade@gmail.com}
-    reply-to: ${EMAIL_REPLY_TO:julirodriguezandrade@gmail.com}

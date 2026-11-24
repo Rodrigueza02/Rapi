@@ -35,3 +35,6 @@ spring:
 
 app:
   drivers: driver-1,driver-2,driver-3,driver-4
+  simulation:
+    prepare-seconds: 4   # delay CREATED → PREPARED
+    assign-seconds:  4   # delay PREPARED → ASSIGNED

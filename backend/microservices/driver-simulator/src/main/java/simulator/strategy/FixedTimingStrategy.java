@@ -6,12 +6,19 @@ import java.time.Duration;
 
 public class FixedTimingStrategy implements TripTimingStrategy {
 
+    private final Duration onTheWay;
     private final Duration arrive;
     private final Duration deliver;
 
-    public FixedTimingStrategy(Duration arrive, Duration deliver) {
-        this.arrive = requirePositive(arrive, "arrive");
-        this.deliver = requirePositive(deliver, "deliver");
+    public FixedTimingStrategy(Duration onTheWay, Duration arrive, Duration deliver) {
+        this.onTheWay = requirePositive(onTheWay, "onTheWay");
+        this.arrive   = requirePositive(arrive,   "arrive");
+        this.deliver  = requirePositive(deliver,  "deliver");
+    }
+
+    @Override
+    public Duration timeToOnTheWay(Trip trip) {
+        return onTheWay;
     }
 
     @Override

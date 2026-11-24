@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -99,15 +100,15 @@ class NotificationRouterServiceTest {
     }
 
     @Test
-    void failsWhenNoStrategySupportsTheEvent() {
+    void silentlySkipsWhenNoStrategySupportsTheEvent() {
         // Arrange
         when(firstStrategy.supports(event)).thenReturn(false);
         when(secondStrategy.supports(event)).thenReturn(false);
 
-        // Act + Assert
-        assertThatThrownBy(() -> service.route(event))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("DriverArrivingEvent");
+        // Act — should NOT throw; unhandled events are logged at DEBUG level
+        service.route(event);
+
+        // Assert
         verifyNoInteractions(notificationCommandPort);
     }
 
@@ -115,6 +116,6 @@ class NotificationRouterServiceTest {
     void rejectsANullEvent() {
         assertThatThrownBy(() -> service.route(null))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("required");
+                .hasMessageContaining("null");
     }
 }

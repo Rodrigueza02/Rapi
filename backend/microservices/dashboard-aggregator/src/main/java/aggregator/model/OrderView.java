@@ -31,6 +31,12 @@ public class OrderView {
         this.lastUpdated     = Objects.requireNonNull(lastUpdated);
     }
 
+    public static OrderView from(OrderCreatedEvent e) {
+        Objects.requireNonNull(e);
+        return new OrderView(e.orderId(), e.customerId(), null, null, null,
+                null, OrderViewState.CREATED, e.occurredAt());
+    }
+
     public static OrderView from(DriverAssignedEvent e) {
         Objects.requireNonNull(e);
         return new OrderView(e.orderId(), e.customerId(), null, null, null,
@@ -82,8 +88,10 @@ public class OrderView {
     }
 
     private static OrderViewState stateFrom(OrderEvent e) {
+        if (e instanceof OrderCreatedEvent)   return OrderViewState.CREATED;
         if (e instanceof OrderPreparedEvent)  return OrderViewState.PREPARED;
         if (e instanceof DriverAssignedEvent) return OrderViewState.ASSIGNED;
+        if (e instanceof OrderOnTheWayEvent)  return OrderViewState.ON_THE_WAY;
         if (e instanceof DriverArrivingEvent) return OrderViewState.ARRIVING;
         if (e instanceof OrderDeliveredEvent) return OrderViewState.DELIVERED;
         if (e instanceof OrderCancelledEvent) return OrderViewState.CANCELLED;

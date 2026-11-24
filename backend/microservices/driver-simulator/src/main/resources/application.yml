@@ -14,5 +14,6 @@ spring:
 
 app:
   simulation:
-    arrive-seconds: 8     
-    deliver-seconds: 6   
+    on-the-way-seconds: 4
+    arrive-seconds: 4
+    deliver-seconds: 4

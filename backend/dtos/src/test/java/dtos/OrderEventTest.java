@@ -71,15 +71,14 @@ class OrderEventTest {
     }
 
     @Test
-    void allFiveKnownEventsArePermitted() {
-        // Act
+    void allSevenKnownEventsArePermitted() {
         Class<?>[] permitted = OrderEvent.class.getPermittedSubclasses();
-
-        // Assert — ahora el ciclo tiene 5 tipos de evento
         assertThat(OrderEvent.class.isSealed()).isTrue();
         assertThat(permitted).containsExactlyInAnyOrder(
+                OrderCreatedEvent.class,
                 OrderPreparedEvent.class,
                 DriverAssignedEvent.class,
+                OrderOnTheWayEvent.class,
                 DriverArrivingEvent.class,
                 OrderDeliveredEvent.class,
                 OrderCancelledEvent.class);
