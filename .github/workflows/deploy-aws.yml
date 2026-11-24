@@ -68,6 +68,8 @@ jobs:
           check_col order_history   delivery_address
           check_col order_history   total_amount
           check_col order_history   items_json
+          check_col order_history   event_type
+          check_col order_history   sequence_num
 
           # CHECK constraint debe estar eliminado
           constraint=$($COMPOSE exec -T postgres \
@@ -91,8 +93,7 @@ jobs:
           echo "OK  $admins usuario(s) ADMIN presente(s)"
 
           # Verificar variables de entorno críticas (sin imprimir su valor)
-          for var in RAPPI_JWT_SECRET RAPPI_DB_PASSWORD RAPPI_RABBIT_PASSWORD \
-                     GMAIL_USER GMAIL_APP_PASSWORD; do
+          for var in RAPPI_JWT_SECRET RAPPI_DB_PASSWORD RAPPI_RABBIT_PASSWORD; do
             val=$(grep "^${var}=" .env 2>/dev/null | cut -d= -f2-)
             if [ -z "$val" ]; then
               echo "ADVERTENCIA: $var no encontrada en .env — verificar configuración."
@@ -134,6 +135,7 @@ jobs:
             order-api \
             order-processor \
             driver-simulator \
+            notification-router \
             dashboard-aggregator \
             dashboard-backend \
             frontend
@@ -149,6 +151,7 @@ jobs:
             order-api \
             order-processor \
             driver-simulator \
+            notification-router \
             dashboard-aggregator \
             dashboard-backend
 
@@ -229,5 +232,5 @@ jobs:
 
           echo "--- Estado final de contenedores ---"
           $COMPOSE ps \
-            order-api order-processor driver-simulator \
+            order-api order-processor driver-simulator notification-router \
             dashboard-aggregator dashboard-backend frontend
