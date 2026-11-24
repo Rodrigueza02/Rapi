@@ -28,7 +28,9 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
         registry.addHandler(handler, "/ws")
                 .setAllowedOriginPatterns(
-                        "http://localhost:5173"
+                        "http://localhost:5173",
+                        "https://rappi-stream.duckdns.org",
+                        "http://rappi-stream.duckdns.org"
                 );
     }
 }

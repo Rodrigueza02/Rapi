@@ -1,24 +1,31 @@
 package aggregator.dto;
 
 import aggregator.model.OrderView;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * Proyección de OrderView para la API REST.
- * Convierte los tipos internos (Instant, enum) a strings JSON.
- */
+import java.math.BigDecimal;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record OrderViewDto(
-        @JsonProperty("order_id")     String orderId,
-        @JsonProperty("driver_id")    String driverId,
-        @JsonProperty("state")        String state,
-        @JsonProperty("last_updated") String lastUpdated
+        @JsonProperty("order_id")          String     orderId,
+        @JsonProperty("customer_id")       String     customerId,
+        @JsonProperty("delivery_address")  String     deliveryAddress,
+        @JsonProperty("total_amount")      BigDecimal totalAmount,
+        @JsonProperty("items_json")        String     itemsJson,
+        @JsonProperty("driver_id")         String     driverId,
+        @JsonProperty("state")             String     state,
+        @JsonProperty("last_updated")      String     lastUpdated
 ) {
-    public static OrderViewDto from(OrderView view) {
+    public static OrderViewDto from(OrderView v) {
         return new OrderViewDto(
-                view.getOrderId(),
-                view.getDriverId(),
-                view.getState().name(),
-                view.getLastUpdated().toString()
-        );
+                v.getOrderId(),
+                v.getCustomerId(),
+                v.getDeliveryAddress(),
+                v.getTotalAmount(),
+                v.getItemsJson(),
+                v.getDriverId(),
+                v.getState().name(),
+                v.getLastUpdated().toString());
     }
 }

@@ -8,16 +8,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class TripTest {
 
     @Test
-    void startsEnRoute() {
+    void startsOnTheWay() {
         // Act
         Trip trip = Trip.start("order-1", "driver-1", "customer-1");
 
         // Assert
-        assertThat(trip.phase()).isEqualTo(Trip.Phase.EN_ROUTE);
+        assertThat(trip.phase()).isEqualTo(Trip.Phase.ON_THE_WAY);
     }
 
     @Test
-    void goesFromEnRouteToArrivingToDelivered() {
+    void goesFromOnTheWayToArrivingToDelivered() {
         // Arrange
         Trip trip = Trip.start("order-1", "driver-1", "customer-1");
 
@@ -37,7 +37,7 @@ class TripTest {
         // Act + Assert
         assertThatThrownBy(trip::markDelivered)
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("EN_ROUTE");
+                .hasMessageContaining("ON_THE_WAY");
     }
 
     @Test

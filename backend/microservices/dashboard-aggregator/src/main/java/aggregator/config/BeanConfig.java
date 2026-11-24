@@ -15,10 +15,6 @@ public class BeanConfig {
     public DashboardAggregatorService dashboardAggregatorService(
             OrderViewRepositoryPort repository,
             DashboardBroadcastPort broadcaster) {
-
-        return new DashboardAggregatorService(
-                repository,
-                broadcaster
-        );
+        return new DashboardAggregatorService(repository, broadcaster);
     }
 }

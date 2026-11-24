@@ -1,36 +1,179 @@
-/* shell.css — layout del panel admin: sidebar + contenido principal */
+/* shell.css — sidebar + layout principal del panel admin */
 
-.admin-shell { display: flex; min-height: 100vh; background: #FFFAF6; }
-
-.sidebar {
-  width: 256px; flex-shrink: 0;
-  background: var(--card-bg); border-right: 1px solid #F0E8E2;
-  padding: 28px 16px; display: flex; flex-direction: column;
+.admin-shell {
+  display: flex;
+  min-height: 100vh;
+  background: #FFFAF6;
 }
 
-.sidebar-brand { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 800; padding: 4px 12px 36px; }
-.sidebar-brand svg { color: var(--orange); }
-.sidebar-brand b   { color: var(--orange); }
+/* ═══════════════════════════════════════════════════════════════
+   SIDEBAR
+   ═══════════════════════════════════════════════════════════════ */
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: #FFFFFF;
+  border-right: 1px solid #F0EBE5;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* altura completa de la pantalla */
+  min-height: 100vh;
+}
 
-.sidebar-label { color: #A5A0A0; font-size: 10px; font-weight: 700; letter-spacing: 1.4px; padding: 0 14px; margin-bottom: 8px; }
-.sidebar-nav   { display: grid; gap: 4px; }
+/* ── Logo / marca ─────────────────────────────────────────────── */
+.sidebar-brand {
+  padding: 24px 20px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-shrink: 0;
+}
 
-.nav-item { display: flex; align-items: center; gap: 13px; padding: 12px 14px; border-radius: var(--radius-sm); color: #74717A; font-size: 14px; font-weight: 500; transition: background .15s, color .15s; }
-.nav-item:hover  { background: #FFF8F3; color: var(--text); }
-.nav-item.active { color: #F17C2D; background: #FFF0E5; font-weight: 700; }
+.sidebar-logo {
+  display: block;
+  width: 100%;
+  max-width: 170px;
+  height: auto;
+  object-fit: contain;
+}
 
-.logout { display: flex; align-items: center; gap: 12px; margin-top: auto; padding: 12px 14px; border: 0; background: none; color: #A6533B; font-size: 14px; font-weight: 500; text-align: left; border-radius: var(--radius-sm); transition: background .15s; }
-.logout:hover { background: #FFF3EE; }
+/* ── Etiqueta de sección ──────────────────────────────────────── */
+.sidebar-label {
+  color: #B5B0BC;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  padding: 0 20px;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
 
-.admin-content { flex: 1; min-width: 0; padding: 36px 42px; }
+/* ── Navegación ───────────────────────────────────────────────── */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 10px;
+  flex: 1;          /* ocupa el espacio disponible */
+  overflow-y: auto;
+}
 
-@media (max-width: 740px) {
-  .admin-shell   { flex-direction: column; }
-  .sidebar       { width: 100%; padding: 14px; }
-  .sidebar-brand { padding: 6px 10px 14px; }
-  .sidebar-nav   { display: flex; overflow-x: auto; gap: 6px; }
-  .nav-item      { white-space: nowrap; }
-  .sidebar-label { display: none; }
-  .logout        { margin-top: 10px; }
-  .admin-content { padding: 22px 16px; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  color: #74717A;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+  position: relative;
+  text-decoration: none;
+}
+
+.nav-item:hover {
+  background: #FFF5EE;
+  color: #3D3A42;
+}
+
+/* Estado activo: fondo naranja sólido, texto e íconos blancos */
+.nav-item.active {
+  color: #FFFFFF;
+  background: var(--orange);
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(245, 130, 50, 0.35);
+}
+.nav-item.active svg {
+  color: #FFFFFF;
+}
+
+/* Badge contador en nav */
+.nav-badge {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background: #EF4444;
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  padding: 0 5px;
+}
+
+/* Badge dentro de item activo: fondo semitransparente */
+.nav-item.active .nav-badge {
+  background: rgba(255, 255, 255, 0.30);
+}
+
+/* ── Bloque inferior (ilustración + cerrar sesión) ────────────── */
+.sidebar-bottom {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 0;
+  margin-top: auto;
+}
+
+/* Imagen del repartidor en scooter */
+.sidebar-illustration {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  object-fit: contain;
+  margin: 0 auto;
+}
+
+/* Botón cerrar sesión */
+.logout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  width: 100%;
+  border: 0;
+  border-top: 1px solid #F0EBE5;
+  background: none;
+  color: #A6533B;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.logout:hover {
+  background: #FFF3EE;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CONTENIDO PRINCIPAL
+   ═══════════════════════════════════════════════════════════════ */
+.admin-content {
+  flex: 1;
+  min-width: 0;
+  padding: 28px 36px;
+  overflow-y: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .admin-content { padding: 22px 20px; }
+}
+
+@media (max-width: 900px) {
+  .admin-shell      { flex-direction: column; }
+  .sidebar          { width: 100%; min-height: auto; flex-direction: row; flex-wrap: wrap; padding: 10px; }
+  .sidebar-brand    { padding: 10px; }
+  .sidebar-nav      { flex-direction: row; overflow-x: auto; gap: 4px; padding: 0; flex: unset; }
+  .nav-item         { white-space: nowrap; }
+  .sidebar-label,
+  .sidebar-bottom   { display: none; }
+  .admin-content    { padding: 20px 16px; }
 }

@@ -23,6 +23,9 @@ import './styles/dashboard/roundrobin.css';
 import './styles/dashboard/panels.css';
 import './styles/dashboard/connection.css';
 
+/* ── Páginas ───────────────────────────────────────────────────── */
+import './styles/pages/pedidos.css';
+
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />

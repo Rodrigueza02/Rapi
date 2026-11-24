@@ -24,6 +24,11 @@ public class RandomTimingStrategy implements TripTimingStrategy {
     }
 
     @Override
+    public Duration timeToOnTheWay(Trip trip) {
+        return pick();
+    }
+
+    @Override
     public Duration timeToArrive(Trip trip) {
         return pick();
     }

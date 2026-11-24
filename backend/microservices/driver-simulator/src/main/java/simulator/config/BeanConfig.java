@@ -21,10 +21,15 @@ public class BeanConfig {
     }
 
     @Bean
-    public TripTimingStrategy tripTimingStrategy(@Value("${app.simulation.arrive-seconds}") long arriveSeconds,
-                                                 @Value("${app.simulation.deliver-seconds}") long deliverSeconds) {
+    public TripTimingStrategy tripTimingStrategy(
+            @Value("${app.simulation.on-the-way-seconds}") long onTheWaySeconds,
+            @Value("${app.simulation.arrive-seconds}")     long arriveSeconds,
+            @Value("${app.simulation.deliver-seconds}")    long deliverSeconds) {
 
-        return new FixedTimingStrategy(Duration.ofSeconds(arriveSeconds), Duration.ofSeconds(deliverSeconds));
+        return new FixedTimingStrategy(
+                Duration.ofSeconds(onTheWaySeconds),
+                Duration.ofSeconds(arriveSeconds),
+                Duration.ofSeconds(deliverSeconds));
     }
 
     @Bean

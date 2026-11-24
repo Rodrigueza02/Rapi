@@ -94,6 +94,10 @@ public class SecurityConfig {
                     HttpMethod.POST,
                     "/api/order"
                 ).hasAnyRole("CLIENTE", "ADMIN")
+                .requestMatchers(
+                    HttpMethod.DELETE,
+                    "/api/order/**"
+                ).hasRole("ADMIN")
                 .anyRequest().denyAll()
             )
             .oauth2ResourceServer(oauth2 ->

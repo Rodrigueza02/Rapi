@@ -17,11 +17,13 @@ class TripTimingStrategyTest {
     @Test
     void fixedStrategyAlwaysReturnsTheConfiguredTimes() {
         // Arrange
-        TripTimingStrategy strategy = new FixedTimingStrategy(Duration.ofSeconds(8), Duration.ofSeconds(6));
+        TripTimingStrategy strategy = new FixedTimingStrategy(
+                Duration.ofSeconds(4), Duration.ofSeconds(4), Duration.ofSeconds(4));
 
         // Act + Assert
-        assertThat(strategy.timeToArrive(trip)).isEqualTo(Duration.ofSeconds(8));
-        assertThat(strategy.timeToDeliver(trip)).isEqualTo(Duration.ofSeconds(6));
+        assertThat(strategy.timeToOnTheWay(trip)).isEqualTo(Duration.ofSeconds(4));
+        assertThat(strategy.timeToArrive(trip)).isEqualTo(Duration.ofSeconds(4));
+        assertThat(strategy.timeToDeliver(trip)).isEqualTo(Duration.ofSeconds(4));
     }
 
     @Test
@@ -33,6 +35,7 @@ class TripTimingStrategyTest {
 
         // Act + Assert
         for (int i = 0; i < 200; i++) {
+            assertThat(strategy.timeToOnTheWay(trip)).isBetween(min, max);
             assertThat(strategy.timeToArrive(trip)).isBetween(min, max);
             assertThat(strategy.timeToDeliver(trip)).isBetween(min, max);
         }
@@ -42,7 +45,7 @@ class TripTimingStrategyTest {
     void bothStrategiesWorkThroughTheSameInterface() {
         // Arrange
         List<TripTimingStrategy> strategies = List.of(
-                new FixedTimingStrategy(Duration.ofSeconds(3), Duration.ofSeconds(3)),
+                new FixedTimingStrategy(Duration.ofSeconds(3), Duration.ofSeconds(3), Duration.ofSeconds(3)),
                 new RandomTimingStrategy(Duration.ofSeconds(3), Duration.ofSeconds(3), new Random(1)));
 
         // Act + Assert
@@ -53,7 +56,7 @@ class TripTimingStrategyTest {
 
     @Test
     void rejectsInvalidDurations() {
-        assertThatThrownBy(() -> new FixedTimingStrategy(Duration.ZERO, Duration.ofSeconds(1)))
+        assertThatThrownBy(() -> new FixedTimingStrategy(Duration.ZERO, Duration.ofSeconds(1), Duration.ofSeconds(1)))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> new RandomTimingStrategy(Duration.ofSeconds(5), Duration.ofSeconds(2), new Random()))
                 .isInstanceOf(IllegalArgumentException.class);

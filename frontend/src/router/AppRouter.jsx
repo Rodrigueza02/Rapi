@@ -12,6 +12,10 @@ import LoginPage from '../pages/auth/LoginPage.jsx';
 
 import AdminDashboard from '../pages/admin/AdminDashboard.jsx';
 
+import PedidosPage from '../pages/admin/PedidosPage.jsx';
+
+import RepartidoresPage from '../pages/admin/RepartidoresPage.jsx';
+
 import ModulePage from '../pages/admin/ModulePage.jsx';
 
 import AccessDenied from '../pages/shared/AccessDenied.jsx';
@@ -23,7 +27,6 @@ const MODULES = [
   'solicitudes',
   'repartidores',
   'pagos',
-  'correos',
 ];
 
 export default function AppRouter({
@@ -85,45 +88,22 @@ export default function AppRouter({
               key={module}
               path={`/admin/${module}`}
               element={
-                <ModulePage module={module} />
+                module === 'pedidos'
+                  ? <PedidosPage />
+                  : module === 'repartidores'
+                    ? <RepartidoresPage />
+                    : <ModulePage module={module} />
               }
             />
           ))}
 
           {/* Compatibilidad con rutas anteriores */}
-          <Route
-            path="/admin/notificaciones"
-            element={
-              <Navigate
-                to="/admin/correos"
-                replace
-              />
-            }
-          />
-
-          <Route
-            path="/admin/reclamaciones"
-            element={
-              <Navigate
-                to="/admin/solicitudes"
-                replace
-              />
-            }
-          />
-
-          <Route
-            path="/admin/reportes"
-            element={
-              <Navigate to="/admin" replace />
-            }
-          />
-
-          <Route
-            path="/admin/configuracion"
-            element={
-              <Navigate to="/admin" replace />
-            }
-          />
+          <Route path="/admin/notificaciones" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/reclamaciones" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/reportes" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/configuracion" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/solicitudes" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin/pagos" element={<Navigate to="/admin" replace />} />
 
         </Route>
       </Route>

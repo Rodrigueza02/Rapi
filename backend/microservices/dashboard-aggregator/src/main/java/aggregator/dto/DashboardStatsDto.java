@@ -3,11 +3,10 @@ package aggregator.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Métricas que el dashboard muestra en las 4 tarjetas superiores.
- *
- * active    → pedidos en estado ASSIGNED o ARRIVING (en curso)
- * delivered → pedidos en estado DELIVERED
- * total     → todos los pedidos conocidos por el agregador
+ * active_orders    = pedidos en estados no terminales (CREATED/PREPARED/ASSIGNED/ON_THE_WAY/ARRIVING)
+ * delivered_orders = pedidos DELIVERED
+ * total_orders     = todos
+ * total_drivers    = repartidores únicos vistos
  */
 public record DashboardStatsDto(
         @JsonProperty("active_orders")    long activeOrders,

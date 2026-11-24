@@ -1,13 +1,58 @@
 /* connection.css — indicador de estado de conexión WebSocket */
 
-.conn-indicator { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:5px 12px; border-radius:20px; }
-.conn-dot       { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+/* Keyframes para los pulsos del punto de conexión */
+@keyframes pulse-green  { 0%,100%{ opacity:1; transform:scale(1);   } 50%{ opacity:.5; transform:scale(1.3); } }
+@keyframes pulse-yellow { 0%,100%{ opacity:1; transform:scale(1);   } 50%{ opacity:.5; transform:scale(1.2); } }
 
-.conn--open       { color:#065F46; background:#D1FAE5; }
-.conn--open       .conn-dot { background:#10B981; animation:pulse-green 2s infinite; }
-.conn--connecting { color:#92400E; background:#FEF3C7; }
-.conn--connecting .conn-dot { background:#F59E0B; animation:pulse-yellow 1s infinite; }
+.conn-indicator {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 20px;
+  white-space: nowrap;
+  letter-spacing: 0.1px;
+}
+
+.conn-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Open / Sistema en línea — verde ─────────────────────────── */
+.conn--open {
+  color: #065F46;
+  background: #D1FAE5;
+  border: 1px solid #A7F3D0;
+}
+.conn--open .conn-dot {
+  background: #10B981;
+  animation: pulse-green 2s ease-in-out infinite;
+}
+
+/* ── Conectando — amarillo ────────────────────────────────────── */
+.conn--connecting {
+  color: #92400E;
+  background: #FEF3C7;
+  border: 1px solid #FDE68A;
+}
+.conn--connecting .conn-dot {
+  background: #F59E0B;
+  animation: pulse-yellow 1s ease-in-out infinite;
+}
+
+/* ── Cerrado / Sin conexión — rojo ───────────────────────────── */
 .conn--closed,
-.conn--error      { color:#991B1B; background:#FEE2E2; }
-.conn--closed     .conn-dot,
-.conn--error      .conn-dot { background:#EF4444; }
+.conn--error {
+  color: #991B1B;
+  background: #FEE2E2;
+  border: 1px solid #FECACA;
+}
+.conn--closed .conn-dot,
+.conn--error  .conn-dot {
+  background: #EF4444;
+}

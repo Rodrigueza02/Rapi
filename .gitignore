@@ -17,3 +17,14 @@ node_modules/
 # Logs y temporales
 *.log
 *.pem
+
+# Copias de seguridad locales
+*.bak
+
+# Dumps de base de datos — nunca versionar
+*.dump
+*.sql.gz
+*.pgdump
+
+# Respaldos locales de base de datos
+backup_before_*.sql
