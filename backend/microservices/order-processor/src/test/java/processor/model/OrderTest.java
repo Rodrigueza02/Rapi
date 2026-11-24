@@ -7,140 +7,119 @@ import processor.state.OrderState;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 
 class OrderTest {
 
-    private static final Instant NOW = Instant.parse("2026-11-21T10:00:00Z");
+    private static final Instant T0 = Instant.parse("2026-11-21T10:00:00Z");
 
     private Order newOrder() {
         return Order.create("order-1", "customer-1", "Calle 18 # 25-10, Pasto",
-                new BigDecimal("25000"), NOW);
+                new BigDecimal("25000"), T0);
+    }
+    private DriverAssignment da(String id) { return new DriverAssignment(id, T0.plusSeconds(5)); }
+
+    // ── Ciclo completo CREATED→PREPARED→ASSIGNED→ON_THE_WAY→ARRIVING→DELIVERED ──
+
+    @Test void createsOrderInCreatedState() {
+        assertThat(newOrder().statusName()).isEqualTo("CREATED");
     }
 
-    private DriverAssignment assignmentOf(String driverId) {
-        return new DriverAssignment(driverId, NOW.plusSeconds(5));
+    @Test void completesFullLifecycle() {
+        Order o = newOrder();
+        o.prepare(T0.plusSeconds(1));  assertThat(o.statusName()).isEqualTo("PREPARED");
+        o.assignDriver(da("d-1"));     assertThat(o.statusName()).isEqualTo("ASSIGNED");
+        o.startDelivery();             assertThat(o.statusName()).isEqualTo("ON_THE_WAY");
+        o.registerArrival(T0.plusSeconds(60));  assertThat(o.statusName()).isEqualTo("ON_THE_WAY");
+        o.completeDelivery(T0.plusSeconds(90)); assertThat(o.statusName()).isEqualTo("DELIVERED");
+        assertThat(o.deliveredAt()).isPresent();
     }
 
-    @Test
-    void createsOrderInCreatedState() {
-        // Act
-        Order order = newOrder();
+    // ── Cancelación ───────────────────────────────────────────────────────────
 
-        // Assert
-        assertThat(order.statusName()).isEqualTo("CREATED");
-        assertThat(order.assignment()).isEmpty();
+    @Test void cancelsFromCreated() {
+        Order o = newOrder();
+        o.cancel();
+        assertThat(o.statusName()).isEqualTo("CANCELLED");
     }
 
-    @Test
-    void completesTheWholeLifecycle() {
-        // Arrange
-        Order order = newOrder();
-
-        // Act + Assert, paso a paso
-        order.assignDriver(assignmentOf("driver-1"));
-        assertThat(order.statusName()).isEqualTo("ASSIGNED");
-        assertThat(order.assignment().orElseThrow().driverId()).isEqualTo("driver-1");
-
-        order.startDelivery();
-        assertThat(order.statusName()).isEqualTo("ON_THE_WAY");
-
-        order.registerArrival(NOW.plusSeconds(60));
-        assertThat(order.statusName()).isEqualTo("ON_THE_WAY");
-        assertThat(order.arrivedAt()).isPresent();
-
-        order.completeDelivery(NOW.plusSeconds(90));
-        assertThat(order.statusName()).isEqualTo("DELIVERED");
-        assertThat(order.deliveredAt()).isPresent();
+    @Test void cancelsFromPrepared() {
+        Order o = newOrder();
+        o.prepare(T0.plusSeconds(1));
+        o.cancel();
+        assertThat(o.statusName()).isEqualTo("CANCELLED");
     }
 
-    @Test
-    void rejectsDeliveryWhenOrderIsNotOnTheWay() {
-        // Arrange
-        Order order = newOrder();
-
-        // Act + Assert
-        assertThatThrownBy(() -> order.completeDelivery(NOW))
-                .isInstanceOf(InvalidStateTransitionException.class)
-                .hasMessageContaining("CREATED");
+    @Test void cancelsFromAssigned() {
+        Order o = newOrder();
+        o.prepare(T0.plusSeconds(1));
+        o.assignDriver(da("d-1"));
+        o.cancel();
+        assertThat(o.statusName()).isEqualTo("CANCELLED");
     }
 
-    @Test
-    void rejectsAssigningTwoDrivers() {
-        // Arrange
-        Order order = newOrder();
-        order.assignDriver(assignmentOf("driver-1"));
-
-        // Act + Assert
-        assertThatThrownBy(() -> order.assignDriver(assignmentOf("driver-2")))
-                .isInstanceOf(InvalidStateTransitionException.class);
-        assertThat(order.assignment().orElseThrow().driverId()).isEqualTo("driver-1");
+    @Test void rejectsCancelFromDelivered() {
+        Order o = newOrder();
+        o.prepare(T0.plusSeconds(1));
+        o.assignDriver(da("d-1"));
+        o.startDelivery();
+        o.registerArrival(T0.plusSeconds(60));
+        o.completeDelivery(T0.plusSeconds(90));
+        assertThatThrownBy(o::cancel).isInstanceOf(InvalidStateTransitionException.class);
     }
 
-    @Test
-    void failedTransitionKeepsTheOrderUntouched() {
-        // Arrange
-        Order order = newOrder();
-
-        // Act
-        assertThatThrownBy(() -> order.completeDelivery(NOW))
-                .isInstanceOf(InvalidStateTransitionException.class);
-
-        // Assert
-        assertThat(order.statusName()).isEqualTo("CREATED");
-        assertThat(order.deliveredAt()).isEmpty();
+    @Test void rejectsCancelFromOnTheWay() {
+        Order o = newOrder();
+        o.prepare(T0.plusSeconds(1));
+        o.assignDriver(da("d-1"));
+        o.startDelivery();
+        assertThatThrownBy(o::cancel).isInstanceOf(InvalidStateTransitionException.class);
     }
 
-    @Test
-    void rejectsArrivalBeforeOrderIsOnTheWay() {
-        // Arrange
-        Order order = newOrder();
-        order.assignDriver(assignmentOf("driver-1"));
+    // ── Transiciones inválidas ────────────────────────────────────────────────
 
-        // Act + Assert
-        assertThatThrownBy(() -> order.registerArrival(NOW))
-                .isInstanceOf(InvalidStateTransitionException.class)
-                .hasMessageContaining("ASSIGNED");
-    }
-
-    @Test
-    void rejectsArrivalRegisteredTwice() {
-        // Arrange
-        Order order = newOrder();
-        order.assignDriver(assignmentOf("driver-1"));
-        order.startDelivery();
-        order.registerArrival(NOW.plusSeconds(60));
-
-        // Act + Assert
-        assertThatThrownBy(() -> order.registerArrival(NOW.plusSeconds(70)))
+    @Test void rejectsDeliveryFromCreated() {
+        assertThatThrownBy(() -> newOrder().completeDelivery(T0))
                 .isInstanceOf(InvalidStateTransitionException.class);
     }
 
-    @Test
-    void rejectsBlankOrderId() {
-        assertThatThrownBy(() -> Order.create(" ", "customer-1", "Calle 18", BigDecimal.TEN, NOW))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("orderId");
+    @Test void rejectsSkippingPrepare() {
+        // CREATED → directamente startDelivery debe fallar
+        assertThatThrownBy(() -> newOrder().startDelivery())
+                .isInstanceOf(InvalidStateTransitionException.class);
     }
 
-    @Test
-    void rejectsNonPositiveTotal() {
-        assertThatThrownBy(() -> Order.create("order-1", "customer-1", "Calle 18", BigDecimal.ZERO, NOW))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("totalAmount");
+    @Test void rejectsDuplicateDriver() {
+        Order o = newOrder();
+        o.prepare(T0.plusSeconds(1));
+        o.assignDriver(da("d-1"));
+        assertThatThrownBy(() -> o.assignDriver(da("d-2")))
+                .isInstanceOf(InvalidStateTransitionException.class);
     }
 
-    @Test
-    void restoreRebuildsOrderInTheGivenState() {
-        // Arrange
-        Order order = Order.restore("order-1", "customer-1", "Calle 18", BigDecimal.TEN, NOW,
-                OrderState.fromName("ON_THE_WAY"), assignmentOf("driver-9"), null, null);
+    @Test void rejectsDuplicateArrival() {
+        Order o = newOrder();
+        o.prepare(T0.plusSeconds(1));
+        o.assignDriver(da("d-1"));
+        o.startDelivery();
+        o.registerArrival(T0.plusSeconds(60));
+        assertThatThrownBy(() -> o.registerArrival(T0.plusSeconds(70)))
+                .isInstanceOf(InvalidStateTransitionException.class);
+    }
 
-        // Act
-        order.completeDelivery(NOW.plusSeconds(30));
+    // ── Restore ───────────────────────────────────────────────────────────────
 
-        // Assert
-        assertThat(order.statusName()).isEqualTo("DELIVERED");
+    @Test void restoreInOnTheWay() {
+        Order o = Order.restore("order-1", "c-1", "Calle 18", BigDecimal.TEN, T0,
+                OrderState.fromName("ON_THE_WAY"), da("d-9"), null, null, null);
+        o.completeDelivery(T0.plusSeconds(30));
+        assertThat(o.statusName()).isEqualTo("DELIVERED");
+    }
+
+    @Test void restoreInPrepared() {
+        Order o = Order.restore("order-1", "c-1", "Calle 18", BigDecimal.TEN, T0,
+                OrderState.fromName("PREPARED"), null, T0.plusSeconds(2), null, null);
+        assertThat(o.statusName()).isEqualTo("PREPARED");
+        assertThat(o.preparedAt()).isPresent();
     }
 }

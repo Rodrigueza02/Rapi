@@ -1,1 +1,66 @@
 package simulator.model;
+
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+class TripTest {
+
+    @Test
+    void startsOnTheWay() {
+        // Act
+        Trip trip = Trip.start("order-1", "driver-1", "customer-1");
+
+        // Assert
+        assertThat(trip.phase()).isEqualTo(Trip.Phase.ON_THE_WAY);
+    }
+
+    @Test
+    void goesFromOnTheWayToArrivingToDelivered() {
+        // Arrange
+        Trip trip = Trip.start("order-1", "driver-1", "customer-1");
+
+        // Act + Assert
+        trip.markArriving();
+        assertThat(trip.phase()).isEqualTo(Trip.Phase.ARRIVING);
+
+        trip.markDelivered();
+        assertThat(trip.phase()).isEqualTo(Trip.Phase.DELIVERED);
+    }
+
+    @Test
+    void cannotBeDeliveredBeforeArriving() {
+        // Arrange
+        Trip trip = Trip.start("order-1", "driver-1", "customer-1");
+
+        // Act + Assert
+        assertThatThrownBy(trip::markDelivered)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ON_THE_WAY");
+    }
+
+    @Test
+    void cannotArriveTwice() {
+        // Arrange
+        Trip trip = Trip.start("order-1", "driver-1", "customer-1");
+        trip.markArriving();
+
+        // Act + Assert
+        assertThatThrownBy(trip::markArriving)
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void rejectsBlankIds() {
+        assertThatThrownBy(() -> Trip.start(" ", "driver-1", "customer-1"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("orderId");
+        assertThatThrownBy(() -> Trip.start("order-1", null, "customer-1"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("driverId");
+        assertThatThrownBy(() -> Trip.start("order-1", "driver-1", " "))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("customerId");
+    }
+}

@@ -1,0 +1,15 @@
+.sidebar-brand {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 105px;
+  margin-bottom: 18px;
+}
+
+.sidebar-logo {
+  display: block;
+  width: 205px;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
